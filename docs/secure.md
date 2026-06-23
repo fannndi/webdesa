@@ -289,28 +289,306 @@ if (!$conn) die("Koneksi gagal.");  // generik
 
 ---
 
+---
+
 ## Cara Demo di UAS
 
 ```bash
-# 1. Switch ke master → demo SQLi
+# 1. Switch ke master → demo SQLi BERHASIL
 git checkout master
-# Semua payload berhasil (injection_points.md)
 
-# 2. Switch ke secure-v2 → demo gagal
+# 2. Switch ke secure-v2 → SERANGAN SAMA GAGAL
 git checkout secure-v2
-# Payload SAMA PERSIS, tapi prepared statement block
 
-# 3. Bandingkan kode
+# 3. Bandingkan kode langsung
 git diff master..secure-v2 -- cek_warga.php
+git diff master..secure-v2 -- admin/login.php
 ```
 
-### Skenario Demo
+---
 
-| No | Aksi | master | secure-v2 | Mengapa |
-|----|------|--------|-----------|---------|
-| 1 | Login: `admin'-- -` | ✅ Masuk dashboard | ❌ "Username atau password salah" | Prepared statement |
-| 2 | NIK: `' OR 1=1 --` | ✅ Semua data tampil | ❌ "NIK harus 16 digit angka" | Validasi regex |
-| 3 | ID: `1 AND SLEEP(5)` | ✅ Delay 5 detik | ❌ 404 not found | `FILTER_VALIDATE_INT` |
-| 4 | Login brute force 6x | ✅ Tidak ada blokir | ❌ "Terlalu banyak percobaan" | Rate limiting |
-| 5 | Dump password via SQLi | ✅ Password terlihat | ❌ Bcrypt hash tidak terbaca | Prepared statement + hash |
-| 6 | SQL error injection | ✅ Stack trace bocor | ❌ Halaman tetap normal | Error suppression |
+## Panduan Praktikum Burp Suite — Versi Secure
+
+Panduan ini menunjukkan **setiap payload dari non-secure.md GAGAL** di versi secure.
+Gunakan Burp Suite dengan cara yang SAMA PERSIS — hasilnya berbeda total.
+
+---
+
+### Skenario 1: Login Bypass GAGAL
+
+**Burp Repeater — payload SAMA dengan non-secure:**
+
+```
+# ❌ GAGAL — tanpilkan halaman login lagi
+POST /webdesa/admin/login.php
+username=admin'-- -&password=x
+```
+
+| # | Aksi | Response | Mengapa |
+|---|------|----------|---------|
+| 1 | Intercept POST login | Request terkirim normal | - |
+| 2 | Send to Repeater | - | - |
+| 3 | `username=admin'-- -` | **❌ 200 OK + "Username atau password salah"** | Prepared statement: `'-- -` = string literal |
+| 4 | `username=' OR 1=1 --` | **❌ 200 OK + "Username atau password salah"** | Sama — diperlakukan sebagai data |
+| 5 | Password: `apaaja` | **❌ 200 OK** | `password_verify()` gagal |
+
+**Kode pembeda:**
+```php
+// master
+$sql = "SELECT * FROM users WHERE username = '$username' AND password = '$password'";
+// → string concatenation → SQLi BERHASIL
+
+// secure-v2
+$stmt = mysqli_prepare($conn, "SELECT id, username, password FROM users WHERE username = ?");
+mysqli_stmt_bind_param($stmt, "s", $username);
+// → parameter binding → ' OR 1=1 = string literal → GAGAL
+```
+
+---
+
+### Skenario 2: Brute Force DIBLOKIR
+
+**Burp Intruder — Intruder → Resource pool → 1 concurrent:**
+
+| # | Aksi | Response |
+|---|------|----------|
+| 1 | Kirim 6x login salah berturut-turut | Percobaan 1-5: "Username atau password salah" |
+| 2 | Kirim percobaan ke-6 | **❌ "Terlalu banyak percobaan login. Coba lagi dalam 15 menit."** |
+| 3 | Login dengan password benar | **❌ Masih diblokir** (sampai 15 menit) |
+
+**Kode pembeda:**
+```php
+// secure-v2
+$ip = $_SERVER['REMOTE_ADDR'];
+if (check_rate_limit($conn, $ip)) {
+    $error = "Terlalu banyak percobaan login. Coba lagi dalam 15 menit.";
+}
+```
+
+Burp Intruder config:
+1. Target: `POST /webdesa/admin/login.php`
+2. Payload position: `username=§admin§&password=§admin123§`
+3. Payload: Simple list (20 password umum)
+4. Resource pool: **Max concurrent requests = 1** (biar sequential)
+5. Start → amati response ke-6 berbeda
+
+---
+
+### Skenario 3: UNION SELECT GAGAL di Cek NIK
+
+**Burp Repeater:**
+
+```
+# ❌ GAGAL — "NIK harus 16 digit angka"
+POST /webdesa/cek_warga.php
+nik=' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12-- -
+```
+
+| # | Aksi | Response | Mengapa |
+|---|------|----------|---------|
+| 1 | Intercept POST cek_warga | Request terkirim | - |
+| 2 | Send to Repeater | - | - |
+| 3 | `nik=' UNION SELECT 1,2,3...-- -` | **❌ "NIK harus 16 digit angka"** | Regex `^\d{16}$` reject |
+| 4 | `nik=' OR 1=1 --` | **❌ "NIK harus 16 digit angka"** | Sama — mengandung karakter non-digit |
+| 5 | `nik=3273010101000001` | ✅ Data ditemukan | NIK valid 16 digit |
+
+**Kode pembeda:**
+```php
+// master — langsung query
+$nik = $_POST['nik'];
+$sql = "SELECT * FROM warga WHERE nik = '$nik'";
+$result = mysqli_query($conn, $sql);
+
+// secure-v2 — validasi dulu
+if (!validate_nik($nik)) {                  // ← BARU
+    $error = "NIK harus 16 digit angka.";   // ← BARU
+} else {
+    $result = db_query($conn,               // ← prepared statement
+        "SELECT nik, nama, ... FROM warga WHERE nik = ?",
+        "s", $nik
+    );
+}
+```
+
+---
+
+### Skenario 4: Error-Based GAGAL di berita_detail.php
+
+**Browser langsung — payload SAMA dengan non-secure:**
+
+```
+http://localhost/webdesa/berita_detail.php?id=1 AND EXTRACTVALUE(1,CONCAT(0x7e,(SELECT version()),0x7e))-- -
+```
+
+| # | Aksi | master | secure-v2 |
+|---|------|--------|-----------|
+| 1 | `?id=1 AND SLEEP(5)--` | ✅ Delay 5 detik | **❌ 404 Not Found** |
+| 2 | `?id=-1 UNION SELECT 1,2,3,4,5--` | ✅ Data tampil | **❌ 404 Not Found** |
+| 3 | `?id=1` | ✅ Berita tampil | ✅ Berita tampil (normal) |
+
+**Mengapa:** `FILTER_VALIDATE_INT` menolak string `"1 AND SLEEP(5)"` karena bukan integer valid.
+
+```php
+// secure-v2
+$id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
+if (!$id || $id < 1) {
+    http_response_code(404);
+    die("Halaman tidak ditemukan.");
+}
+// → "1 AND SLEEP(5)" = null = 404
+```
+
+---
+
+### Skenario 5: Time-Based GAGAL Total
+
+**Burp Repeater — drop-down response time:**
+
+**master:** Request `' AND SLEEP(5)--` → response **+5 detik**
+**secure-v2:** Request SAMA → response **< 1 detik** (langsung di-reject regex)
+
+| # | Payload | master (response time) | secure-v2 (response time) |
+|---|---------|------------------------|---------------------------|
+| 1 | `' AND SLEEP(5)--` | ~5.2 detik | **< 0.1 detik** |
+| 2 | `' AND IF(1=1,SLEEP(5),0)--` | ~5.2 detik | **< 0.1 detik** |
+| 3 | `' AND IF(SUBSTRING(...),SLEEP(5),0)--` | ~3-5 detik | **< 0.1 detik** |
+| 4 | NIK valid `3273010101000001` | ~0.1 detik | ~0.1 detik (normal) |
+
+**Kesimpulan:** Ekstraksi time-based blind **tidak mungkin** — payload di-reject sebelum menyentuh database.
+
+---
+
+### Skenario 6: Data Dump via UNION GAGAL
+
+**Burp Repeater — semua payload UNION gagal di layer validasi:**
+
+```
+# ❌ Tidak ada satu pun payload ini lolos
+nik=' UNION SELECT 1,version(),3,...-- -
+nik=' UNION SELECT 1,GROUP_CONCAT(table_name),3,... FROM information_schema...-- -
+nik=' UNION SELECT 1,GROUP_CONCAT(username,0x3a,password),3,... FROM users-- -
+```
+
+| Layer Pertahanan | Payload Lolos? |
+|-----------------|----------------|
+| Validasi NIK (regex 16 digit) | **❌ Tidak** |
+| Prepared statement | **❌ Tidak** (tapi bahkan tidak sampai sini) |
+
+---
+
+### Skenario 7: Search Warga via GET GAGAL
+
+```
+http://localhost/webdesa/admin/warga.php?q=' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12-- -
+```
+
+**master:** ✅ Semua data tampil (LIKE wildcard + SQLi)
+**secure-v2:** **❌ Tabel kosong** (prepared statement — data tidak match)
+
+```php
+// secure-v2
+$search_param = "%{$search}%";
+$result = db_query($conn,
+    "SELECT id, nik, nama, dusun, rt, rw, pekerjaan FROM warga WHERE nama LIKE ? OR nik LIKE ? ORDER BY nama ASC",
+    "ss", $search_param, $search_param
+);
+// → '%' UNION SELECT...' = LIKE mencari string literal '%' UNION...'
+// → Tidak ada data yang match → tabel kosong
+```
+
+---
+
+### Skenario 8: Filter Status Surat GAGAL
+
+```
+http://localhost/webdesa/admin/surat.php?status=' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14-- -
+```
+
+**master:** ✅ Data tampil (SQLi via WHERE clause)
+**secure-v2:** **❌ Status di-reset ke kosong** — whitelist reject.
+
+```php
+// secure-v2
+$allowed_status = ['menunggu', 'diproses', 'selesai', 'ditolak', ''];
+$status = $_GET['status'] ?? '';
+if (!in_array($status, $allowed_status)) {
+    $status = '';  // ← reject, reset ke default
+}
+// → "' UNION SELECT..." tidak ada di whitelist → $status = ''
+// → Query tanpa WHERE → menampilkan SEMUA (tapi aman, tidak bocor)
+```
+
+---
+
+### Skenario 9: CSRF Protection — Form POST DITOLAK
+
+**Burp Repeater — tanpa CSRF token:**
+
+```
+# ❌ GAGAL — "Request tidak valid."
+POST /webdesa/cek_warga.php
+nik=3273010101000001
+```
+Response: **"Request tidak valid."**
+
+**Solusi di browser:** Form normal bekerja karena CSRF token di-generate via session.
+**Solusi di Burp:** Ambil CSRF token dari response HTML dulu, baru kirim ulang dengan token valid.
+
+---
+
+### Skenario 10: Error Info Disclosure GAGAL
+
+**Browser — payload error:**
+
+```
+http://localhost/webdesa/berita_detail.php?id=1'
+```
+
+**master:** ✅ Error MySQL detail (syntax error, posisi, query)
+**secure-v2:** **❌ 404 Not Found** — tidak ada informasi teknis bocor
+
+```
+http://localhost/webdesa/cek_warga.php
+nik=TEST
+```
+
+**master:** ✅ "Query Error: Unknown column 'TEST'..."
+**secure-v2:** **❌ "NIK harus 16 digit angka."** — pesan generik
+
+---
+
+## Tabel Perbandingan — Semua Serangan GAGAL
+
+| No | Serangan | Payload | master | secure-v2 | Layer yang Blokir |
+|----|----------|---------|--------|-----------|-------------------|
+| 1 | Login bypass | `admin'-- -` | ✅ Login | ❌ Gagal | Prepared statement |
+| 2 | Brute force | 6x percobaan | ✅ Tidak ada blokir | ❌ Blokir | Rate limit |
+| 3 | UNION SELECT | `' UNION SELECT 1,2,3...` | ✅ Data bocor | ❌ "NIK harus 16 digit" | Regex validasi |
+| 4 | Error-based | `id=1 AND EXTRACTVALUE...` | ✅ Versi MySQL bocor | ❌ 404 | FILTER_VALIDATE_INT |
+| 5 | Time-based | `' AND SLEEP(5)--` | ✅ Delay 5 detik | ❌ No delay | Regex reject |
+| 6 | Dump credentials | `UNION SELECT ... FROM users` | ✅ admin:admin123 | ❌ "NIK harus 16 digit" | Regex reject |
+| 7 | Search LIKE | `?q=' UNION SELECT...` | ✅ Data terbaca | ❌ Tabel kosong | Prepared statement |
+| 8 | Filter status | `?status=' UNION SELECT...` | ✅ Data bocor | ❌ Reset ke kosong | Whitelist enum |
+| 9 | Form POST tanpa token | `nik=xxx` (no CSRF) | ✅ Data ditemukan | ❌ "Request tidak valid" | CSRF token |
+| 10 | Error disclosure | `id=1'` | ✅ Error SQL muncul | ❌ 404 tidak jelas | Error suppression |
+
+---
+
+## Quick Reference: master vs secure-v2
+
+| Aspek | master | secure-v2 |
+|-------|--------|-----------|
+| Branch | `master` | `secure-v2` |
+| Database | `webdesa` | `webdesa_secure` |
+| Password storage | Plaintext | bcrypt hash |
+| Query method | `mysqli_query()` | `db_query()` prepared statement |
+| Output encoding | `echo $var` | `echo e($var)` |
+| Error handling | `mysqli_error()` | Pesan generik |
+| CSRF | ❌ | ✅ Token per sesi |
+| Rate limit | ❌ | ✅ 5x/15 menit |
+| Session | `session_start()` biasa | httponly + samesite + regenerate |
+
+```bash
+# Cek perbedaan kode langsung
+git diff master..secure-v2 --stat
+```
