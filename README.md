@@ -22,7 +22,8 @@
 | admin/login.php         | password  | POST   | Login bypass                       |
 | admin/warga.php         | q         | GET    | Search warga                       |
 | admin/surat.php         | status    | GET    | Filter pengajuan                   |
-| berita_detail.php       | id        | GET    | Detail berita                      |
+| berita_detail.php       | id        | GET    | Detail berita (query utama)        |
+| berita_detail.php       | id        | GET    | Detail berita (sidebar "Lainnya")  |
 
 ## Pengujian dengan Burp Suite
 1. Set Burp Suite sebagai proxy (127.0.0.1:8080)

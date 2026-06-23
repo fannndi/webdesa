@@ -122,4 +122,5 @@ webdesa/
 ├── admin/warga.php          # SQLi point #7, #8, #9
 ├── admin/surat.php          # SQLi point #10, #11
 └── admin/berita.php         # SQLi point #12
+    berita_detail.php        # SQLi point #13 (sidebar query)
 ```

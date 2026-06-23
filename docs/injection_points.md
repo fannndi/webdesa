@@ -361,6 +361,31 @@ $sql = "UPDATE berita SET judul='$judul', isi='$isi',
 
 ---
 
+## 13. berita_detail.php (Sidebar "Berita Lainnya")
+
+### Lokasi Kode
+```php
+// File: berita_detail.php
+// Baris: ~37
+
+$berita_lain = mysqli_query($conn, "SELECT id, judul, created_at FROM berita
+    WHERE diterbitkan = 1 AND id != '$id' ORDER BY created_at DESC LIMIT 5");
+```
+
+### Parameter
+- **Nama:** `id`
+- **Method:** GET
+- **Tipe Input:** Integer
+
+### Catatan
+Variabel `$id` berasal dari `$_GET['id']` yang sama dengan injection point #5. Namun query ini dieksekusi **secara terpisah** di sidebar, sehingga menjadi injection point tambahan yang terpisah dari query utama.
+
+### Keuntungan untuk Tester
+- Satu request bisa mengeksekusi **2 query vulnerable** (query utama + sidebar)
+- Memungkinkan **multi-statement side-channel** jika diperlukan
+
+---
+
 ## Ringkasan Titik Injeksi
 
 | No | File | Parameter | Method | Query Type | Risiko |
@@ -377,6 +402,7 @@ $sql = "UPDATE berita SET judul='$judul', isi='$isi',
 | 10 | admin/surat.php | status | GET | SELECT (WHERE) | Ekstraksi data |
 | 11 | admin/surat.php | multiple | POST | UPDATE | Data manipulation |
 | 12 | admin/berita.php | id, multiple | GET/POST | DELETE/INSERT/UPDATE | Full CRUD abuse |
+| 13 | berita_detail.php | id (sidebar) | GET | SELECT | Ekstraksi data (sidebar) |
 
 ---
 

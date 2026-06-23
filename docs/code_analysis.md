@@ -177,3 +177,4 @@ if (!isset($_SESSION['user_id'])) {
 | admin/berita.php | ~20 | UPDATE berita SET diterbitkan = NOT ... WHERE id='$id' | GET toggle |
 | admin/berita.php | ~30 | INSERT INTO berita VALUES(...) | Multiple POST |
 | admin/berita.php | ~45 | UPDATE berita SET ... WHERE id='$id' | POST |
+| berita_detail.php | ~37 | SELECT ... WHERE id != '$id' | GET id (sidebar) |
