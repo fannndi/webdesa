@@ -1,6 +1,6 @@
 <?php
-$conn = mysqli_connect('localhost', 'root', '', 'webdesa');
+$conn = mysqli_connect('localhost', 'root', '', 'webdesa_secure');
 if (!$conn) {
-    die("Koneksi gagal: " . mysqli_connect_error());
+    die("Koneksi gagal.");
 }
 mysqli_set_charset($conn, 'utf8mb4');

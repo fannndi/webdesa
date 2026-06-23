@@ -1,20 +1,15 @@
--- Database Schema untuk Sistem Informasi Desa
--- SQL Injection Research Lab
+CREATE DATABASE IF NOT EXISTS webdesa_secure;
+USE webdesa_secure;
 
-CREATE DATABASE IF NOT EXISTS webdesa;
-USE webdesa;
-
--- Tabel users
 CREATE TABLE users (
   id           INT AUTO_INCREMENT PRIMARY KEY,
   username     VARCHAR(50)  NOT NULL UNIQUE,
-  password     VARCHAR(100) NOT NULL,
+  password     VARCHAR(255) NOT NULL,
   nama_lengkap VARCHAR(100) NOT NULL,
   role         ENUM('admin','petugas') DEFAULT 'petugas',
   created_at   DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabel warga
 CREATE TABLE warga (
   id                INT AUTO_INCREMENT PRIMARY KEY,
   nik               CHAR(16)     NOT NULL UNIQUE,
@@ -31,7 +26,6 @@ CREATE TABLE warga (
   created_at        DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabel surat_pengajuan
 CREATE TABLE surat_pengajuan (
   id              INT AUTO_INCREMENT PRIMARY KEY,
   warga_id        INT  NOT NULL,
@@ -49,7 +43,6 @@ CREATE TABLE surat_pengajuan (
   FOREIGN KEY (diproses_oleh) REFERENCES users(id)
 );
 
--- Tabel berita
 CREATE TABLE berita (
   id          INT AUTO_INCREMENT PRIMARY KEY,
   judul       VARCHAR(255) NOT NULL,
@@ -57,4 +50,11 @@ CREATE TABLE berita (
   penulis     VARCHAR(100) NOT NULL,
   diterbitkan TINYINT(1)   DEFAULT 0,
   created_at  DATETIME     DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE login_attempts (
+  id           INT AUTO_INCREMENT PRIMARY KEY,
+  ip_address   VARCHAR(45) NOT NULL,
+  attempted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_ip_time (ip_address, attempted_at)
 );

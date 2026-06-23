@@ -1,14 +1,9 @@
--- Dummy Data untuk Sistem Informasi Desa
--- SQL Injection Research Lab
+USE webdesa_secure;
 
-USE webdesa;
-
--- Insert Users (plaintext passwords)
 INSERT INTO users (username, password, nama_lengkap, role) VALUES
-('admin', 'admin123', 'Administrator', 'admin'),
-('petugas1', 'petugas123', 'Ahmad Petugas', 'petugas');
+('admin',    '$2y$12$c73y1dfyUZvvaDof9x66.aVarJfw.WL6ymowXbazOKTxaRVPxhWu', 'Administrator', 'admin'),
+('petugas1', '$2y$12$zzuWmdj4KKxL.cMiskaeQOan15obF7J8unQJCU/1nwftkb/giy2L6', 'Ahmad Petugas', 'petugas');
 
--- Insert 150 Data Warga Fiktif
 INSERT INTO warga (nik, nama, tempat_lahir, tanggal_lahir, jenis_kelamin, alamat, rt, rw, dusun, pekerjaan, status_perkawinan) VALUES
 ('3273010101000001', 'Ahmad Hidayat', 'Bogor', '1985-01-15', 'L', 'Jl. Raya Sukamaju No. 1', '001', '001', 'Sukamaju', 'PNS', 'Kawin'),
 ('3273010101000002', 'Siti Rahayu', 'Bogor', '1987-03-20', 'P', 'Jl. Raya Sukamaju No. 2', '001', '001', 'Sukamaju', 'Ibu Rumah Tangga', 'Kawin'),
@@ -161,7 +156,6 @@ INSERT INTO warga (nik, nama, tempat_lahir, tanggal_lahir, jenis_kelamin, alamat
 ('3273010101000149', 'Zulfa Maharani', 'Bogor', '1989-05-15', 'L', 'Jl. Pasirsari No. 149', '005', '003', 'Pasirsari', 'Petani', 'Kawin'),
 ('3273010101000150', 'Ajun Perwira', 'Jakarta', '1992-08-28', 'P', 'Jl. Pasirsari No. 150', '005', '003', 'Pasirsari', 'Ibu Rumah Tangga', 'Kawin');
 
--- Insert 8 Artikel Berita
 INSERT INTO berita (judul, isi, penulis, diterbitkan) VALUES
 ('Pembangunan Jalan Desa Rampai Telah Selesai', 'Alhamdulillah, pembangunan jalan desa sepanjang 2 kilometer yang menghubungkan Dusun Sukamaju dengan Dusun Suka Damai telah selesai dikerjakan. Pembangunan ini menggunakan dana desa tahun 2026 dan diharapkan dapat meningkatkan akses transportasi warga serta memperlancar distribusi hasil pertanian. Kepala Desa H. Suparman, S.Sos mengucapkan terima kasih kepada seluruh warga yang telah mendukung kelancaran proyek ini.', 'Admin Desa', 1),
 ('Posyandu Melati Raih Juara Tingkat Kabupaten', 'Posyandu Melati yang berlokasi di Dusun Cirendeu berhasil meraih juara 1 dalam lomba Posyandu tingkat Kabupaten Bogor tahun 2026. Penghargaan ini diberikan berkat dedikasi para kader posyandu dalam memberikan pelayanan kesehatan ibu dan anak. Diharapkan prestasi ini dapat memotivasi posyandu lainnya di Desa Sukamaju untuk terus meningkatkan kualitas pelayanan.', 'Admin Desa', 1),
@@ -172,7 +166,6 @@ INSERT INTO berita (judul, isi, penulis, diterbitkan) VALUES
 ('Pembagian Sertifikat Tanah Program PTSL', 'Sebanyak 200 sertifikat tanah telah dibagikan kepada warga Desa Sukamaju melalui Program Pendaftaran Tanah Sistematis Lengkap (PTSL). Pembagian dilakukan di Balai Desa dan dihadiri oleh perwakilan BPN Kabupaten Bogor. Warga yang sudah menerima sertifikat dimohon untuk menyimpannya dengan baik.', 'Admin Desa', 1),
 ('Rapat Koordinasi Bulanan Perangkat Desa', 'Perangkat Desa Sukamaju mengadakan rapat koordinasi bulanan di Kantor Desa. Rapat membahas evaluasi kinerja bulan lalu dan rencana kerja bulan depan. Beberapa agenda yang dibahas meliputi penyaluran BLT, pelaksanaan musyawarah desa, dan persiapan pemilihan ketua RT/RW.', 'Admin Desa', 1);
 
--- Insert 10 Data Pengajuan Surat Dummy
 INSERT INTO surat_pengajuan (warga_id, jenis_surat, keperluan, nama_usaha, alamat_usaha, nama_pasangan, status, catatan_admin, tanggal_ajuan, tanggal_selesai, diproses_oleh) VALUES
 (1, 'domisili', 'Untuk keperluan administrasi bank', NULL, NULL, NULL, 'selesai', 'Surat sudah dicetak', '2026-05-01 09:00:00', '2026-05-02 14:00:00', 1),
 (5, 'usaha', 'Untuk pengurusan izin usaha', 'Warung Sederhana', 'Jl. Cirendeu No. 5', NULL, 'selesai', 'Surat sudah dicetak', '2026-05-03 10:00:00', '2026-05-04 11:00:00', 1),
