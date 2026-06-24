@@ -381,7 +381,7 @@ Burp Intruder config:
 ```
 # ❌ GAGAL — "NIK harus 16 digit angka"
 POST /webdesa/cek_warga.php
-nik=' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12-- -
+nik=' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13-- -
 ```
 
 | # | Aksi | Response | Mengapa |
@@ -423,7 +423,7 @@ http://localhost/webdesa/berita_detail.php?id=1 AND EXTRACTVALUE(1,CONCAT(0x7e,(
 | # | Aksi | master | secure-v2 |
 |---|------|--------|-----------|
 | 1 | `?id=1 AND SLEEP(5)--` | ✅ Delay 5 detik | **❌ 404 Not Found** |
-| 2 | `?id=-1 UNION SELECT 1,2,3,4,5--` | ✅ Data tampil | **❌ 404 Not Found** |
+| 2 | `?id=-1 UNION SELECT 1,2,3,4,5,6--` | ✅ Data tampil | **❌ 404 Not Found** |
 | 3 | `?id=1` | ✅ Berita tampil | ✅ Berita tampil (normal) |
 
 **Mengapa:** `FILTER_VALIDATE_INT` menolak string `"1 AND SLEEP(5)"` karena bukan integer valid.
@@ -479,7 +479,7 @@ nik=' UNION SELECT 1,GROUP_CONCAT(username,0x3a,password),3,... FROM users-- -
 ### Skenario 7: Search Warga via GET GAGAL
 
 ```
-http://localhost/webdesa/admin/warga.php?q=' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12-- -
+http://localhost/webdesa/admin/warga.php?q=' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13-- -
 ```
 
 **master:** ✅ Semua data tampil (LIKE wildcard + SQLi)
@@ -501,7 +501,7 @@ $result = db_query($conn,
 ### Skenario 8: Filter Status Surat GAGAL
 
 ```
-http://localhost/webdesa/admin/surat.php?status=' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14-- -
+http://localhost/webdesa/admin/surat.php?status=' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15-- -
 ```
 
 **master:** ✅ Data tampil (SQLi via WHERE clause)

