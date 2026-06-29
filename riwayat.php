@@ -5,7 +5,7 @@
 <div class="row">
     <div class="col-md-6">
         <div class="card mb-4">
-            <div class="card-header bg-success text-white">
+            <div class="card-header bg-primary text-white">
                 <h5 class="mb-0">Cek Riwayat Berdasarkan NIK</h5>
             </div>
             <div class="card-body">
@@ -14,7 +14,7 @@
                         <label for="nik" class="form-label">Nomor Induk Kependudukan (NIK)</label>
                         <input type="text" class="form-control" id="nik" name="nik" placeholder="Masukkan 16 digit NIK" maxlength="16" required>
                     </div>
-                    <button type="submit" class="btn btn-success"><i class="bi bi-search"></i> Cek Riwayat</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Cek Riwayat</button>
                 </form>
             </div>
         </div>
@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 switch ($row['status']) {
                     case 'menunggu': $status_badge = '<span class="badge bg-warning">Menunggu</span>'; break;
                     case 'diproses': $status_badge = '<span class="badge bg-info">Diproses</span>'; break;
-                    case 'selesai': $status_badge = '<span class="badge bg-success">Selesai</span>'; break;
+                    case 'selesai': $status_badge = '<span class="badge bg-primary">Selesai</span>'; break;
                     case 'ditolak': $status_badge = '<span class="badge bg-danger">Ditolak</span>'; break;
                 }
                 echo '<tr>';

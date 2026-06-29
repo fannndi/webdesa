@@ -13,7 +13,7 @@ require_once __DIR__ . '/../config/database.php';
     <link href="<?= defined('BASE_URL') ? BASE_URL : '' ?>assets/css/style.css" rel="stylesheet">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-success">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
             <a class="navbar-brand" href="<?= defined('BASE_URL') ? BASE_URL : '' ?>">
                 <i class="bi bi-building"></i> <?= defined('DESA_NAMA') ? DESA_NAMA : 'Desa' ?>

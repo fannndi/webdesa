@@ -25,11 +25,11 @@ $berita = mysqli_fetch_assoc($result);
                 </div>
             </div>
         </div>
-        <a href="berita.php" class="btn btn-success mt-3"><i class="bi bi-arrow-left"></i> Kembali ke Daftar Berita</a>
+        <a href="berita.php" class="btn btn-primary mt-3"><i class="bi bi-arrow-left"></i> Kembali ke Daftar Berita</a>
     </div>
     <div class="col-md-4">
         <div class="card">
-            <div class="card-header bg-success text-white">
+            <div class="card-header bg-primary text-white">
                 <h5 class="mb-0"><i class="bi bi-newspaper"></i> Berita Lainnya</h5>
             </div>
             <div class="card-body">
@@ -48,7 +48,7 @@ $berita = mysqli_fetch_assoc($result);
 </div>
 <?php else: ?>
 <div class="alert alert-warning">Berita tidak ditemukan.</div>
-<a href="berita.php" class="btn btn-success"><i class="bi bi-arrow-left"></i> Kembali ke Daftar Berita</a>
+<a href="berita.php" class="btn btn-primary"><i class="bi bi-arrow-left"></i> Kembali ke Daftar Berita</a>
 <?php endif; ?>
 
 <?php include 'includes/footer.php'; ?>

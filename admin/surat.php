@@ -72,7 +72,7 @@ $result = mysqli_query($conn, $sql);
                         switch ($row['status']) {
                             case 'menunggu': $status_badge = '<span class="badge bg-warning">Menunggu</span>'; break;
                             case 'diproses': $status_badge = '<span class="badge bg-info">Diproses</span>'; break;
-                            case 'selesai': $status_badge = '<span class="badge bg-success">Selesai</span>'; break;
+                            case 'selesai': $status_badge = '<span class="badge bg-primary">Selesai</span>'; break;
                             case 'ditolak': $status_badge = '<span class="badge bg-danger">Ditolak</span>'; break;
                         }
                     ?>

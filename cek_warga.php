@@ -5,7 +5,7 @@
 <div class="row">
     <div class="col-md-6">
         <div class="card">
-            <div class="card-header bg-success text-white">
+            <div class="card-header bg-primary text-white">
                 <h5 class="mb-0">Masukkan NIK</h5>
             </div>
             <div class="card-body">
@@ -14,7 +14,7 @@
                         <label for="nik" class="form-label">Nomor Induk Kependudukan (NIK)</label>
                         <input type="text" class="form-control" id="nik" name="nik" placeholder="Masukkan 16 digit NIK" maxlength="16" required>
                     </div>
-                    <button type="submit" class="btn btn-success"><i class="bi bi-search"></i> Cek Data</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Cek Data</button>
                 </form>
             </div>
         </div>

@@ -23,9 +23,9 @@ $berita_terbaru = mysqli_query($conn, "SELECT * FROM berita WHERE diterbitkan = 
 <!-- Statistik -->
 <div class="row mb-5">
     <div class="col-md-3 mb-3">
-        <div class="card text-center h-100 border-success">
+        <div class="card text-center h-100 border-primary">
             <div class="card-body">
-                <i class="bi bi-people fs-1 text-success"></i>
+                <i class="bi bi-people fs-1 text-primary"></i>
                 <h3 class="mt-2"><?= $total_warga ?></h3>
                 <p class="text-muted">Total Penduduk</p>
             </div>
@@ -83,7 +83,7 @@ $berita_terbaru = mysqli_query($conn, "SELECT * FROM berita WHERE diterbitkan = 
                 <h5 class="card-title"><?= $berita['judul'] ?></h5>
                 <p class="text-muted"><i class="bi bi-calendar"></i> <?= date('d M Y', strtotime($berita['created_at'])) ?> | <i class="bi bi-person"></i> <?= $berita['penulis'] ?></p>
                 <p class="card-text"><?= substr($berita['isi'], 0, 150) ?>...</p>
-                <a href="berita_detail.php?id=<?= $berita['id'] ?>" class="btn btn-success btn-sm">Baca Selengkapnya</a>
+                <a href="berita_detail.php?id=<?= $berita['id'] ?>" class="btn btn-primary btn-sm">Baca Selengkapnya</a>
             </div>
         </div>
     </div>

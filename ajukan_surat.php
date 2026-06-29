@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $step == 3) {
     
     if (mysqli_query($conn, $sql)) {
         echo '<div class="alert alert-success"><i class="bi bi-check-circle"></i> Pengajuan surat berhasil dikirim. Silakan cek riwayat untuk mengetahui status pengajuan Anda.</div>';
-        echo '<a href="riwayat.php" class="btn btn-success"><i class="bi bi-clock-history"></i> Cek Riwayat</a>';
+        echo '<a href="riwayat.php" class="btn btn-primary"><i class="bi bi-clock-history"></i> Cek Riwayat</a>';
     } else {
         echo '<div class="alert alert-danger">Error: ' . mysqli_error($conn) . '</div>';
     }
@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $step == 3) {
 <div class="row">
     <div class="col-md-6">
         <div class="card">
-            <div class="card-header bg-success text-white">
+            <div class="card-header bg-primary text-white">
                 <h5 class="mb-0">Step 1: Verifikasi NIK</h5>
             </div>
             <div class="card-body">
@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $step == 3) {
                         <label for="nik" class="form-label">Masukkan NIK Anda</label>
                         <input type="text" class="form-control" id="nik" name="nik" placeholder="16 digit NIK" maxlength="16" required>
                     </div>
-                    <button type="submit" class="btn btn-success"><i class="bi bi-search"></i> Verifikasi</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Verifikasi</button>
                 </form>
             </div>
         </div>
@@ -79,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $step == 3) {
         </div>
 
         <div class="card">
-            <div class="card-header bg-success text-white">
+            <div class="card-header bg-primary text-white">
                 <h5 class="mb-0">Step 2: Pilih Jenis Surat</h5>
             </div>
             <div class="card-body">
@@ -121,7 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $step == 3) {
                         </div>
                     </div>
                     
-                    <button type="submit" class="btn btn-success"><i class="bi bi-send"></i> Ajukan Surat</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-send"></i> Ajukan Surat</button>
                 </form>
             </div>
         </div>

@@ -92,7 +92,7 @@ $result = mysqli_query($conn, "SELECT * FROM berita ORDER BY created_at DESC");
                         <td><?= $row['penulis'] ?></td>
                         <td>
                             <?php if ($row['diterbitkan']): ?>
-                                <span class="badge bg-success">Published</span>
+                                <span class="badge bg-primary">Published</span>
                             <?php else: ?>
                                 <span class="badge bg-secondary">Draft</span>
                             <?php endif; ?>

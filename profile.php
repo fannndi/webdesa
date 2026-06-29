@@ -6,7 +6,7 @@
     <div class="col-md-8">
         <!-- Sejarah -->
         <div class="card mb-4">
-            <div class="card-header bg-success text-white">
+            <div class="card-header bg-primary text-white">
                 <h5 class="mb-0"><i class="bi bi-clock-history"></i> Sejarah Desa</h5>
             </div>
             <div class="card-body">
@@ -17,7 +17,7 @@
 
         <!-- Visi Misi -->
         <div class="card mb-4">
-            <div class="card-header bg-success text-white">
+            <div class="card-header bg-primary text-white">
                 <h5 class="mb-0"><i class="bi bi-bullseye"></i> Visi dan Misi</h5>
             </div>
             <div class="card-body">
@@ -38,7 +38,7 @@
     <div class="col-md-4">
         <!-- Struktur Organisasi -->
         <div class="card mb-4">
-            <div class="card-header bg-success text-white">
+            <div class="card-header bg-primary text-white">
                 <h5 class="mb-0"><i class="bi bi-diagram-3"></i> Struktur Organisasi</h5>
             </div>
             <div class="card-body">
@@ -91,7 +91,7 @@
 
         <!-- Data Wilayah -->
         <div class="card">
-            <div class="card-header bg-success text-white">
+            <div class="card-header bg-primary text-white">
                 <h5 class="mb-0"><i class="bi bi-geo-alt"></i> Data Wilayah</h5>
             </div>
             <div class="card-body">

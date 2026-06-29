@@ -19,7 +19,7 @@ require_once __DIR__ . '/../config/database.php';
 </head>
 <body>
     <div class="d-flex">
-        <nav class="admin-sidebar bg-dark text-white">
+        <nav class="admin-sidebar text-white">
             <div class="p-3">
                 <h5 class="text-center"><i class="bi bi-shield-lock"></i> Admin Panel</h5>
                 <hr>
@@ -57,7 +57,7 @@ require_once __DIR__ . '/../config/database.php';
                 <span class="navbar-text">
                     Selamat datang, <?= isset($_SESSION['username']) ? $_SESSION['username'] : 'Admin' ?>
                 </span>
-                <a href="../" class="btn btn-outline-success btn-sm">
+                <a href="../" class="btn btn-outline-primary btn-sm">
                     <i class="bi bi-house"></i> Lihat Website
                 </a>
             </nav>

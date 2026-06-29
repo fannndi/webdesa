@@ -49,7 +49,7 @@ $total_berita = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total
 </div>
 
 <div class="card">
-    <div class="card-header bg-success text-white">
+    <div class="card-header bg-primary text-white">
         <h5 class="mb-0"><i class="bi bi-clock-history"></i> 10 Pengajuan Terbaru</h5>
     </div>
     <div class="card-body">
@@ -73,7 +73,7 @@ $total_berita = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total
                         switch ($row['status']) {
                             case 'menunggu': $status_badge = '<span class="badge bg-warning">Menunggu</span>'; break;
                             case 'diproses': $status_badge = '<span class="badge bg-info">Diproses</span>'; break;
-                            case 'selesai': $status_badge = '<span class="badge bg-success">Selesai</span>'; break;
+                            case 'selesai': $status_badge = '<span class="badge bg-primary">Selesai</span>'; break;
                             case 'ditolak': $status_badge = '<span class="badge bg-danger">Ditolak</span>'; break;
                         }
                     ?>

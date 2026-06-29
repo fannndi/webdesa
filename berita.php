@@ -21,7 +21,7 @@ $berita = mysqli_query($conn, "SELECT * FROM berita WHERE diterbitkan = 1 ORDER 
                 <h5 class="card-title"><?= $item['judul'] ?></h5>
                 <p class="text-muted"><i class="bi bi-calendar"></i> <?= date('d M Y', strtotime($item['created_at'])) ?> | <i class="bi bi-person"></i> <?= $item['penulis'] ?></p>
                 <p class="card-text"><?= substr($item['isi'], 0, 150) ?>...</p>
-                <a href="berita_detail.php?id=<?= $item['id'] ?>" class="btn btn-success btn-sm">Baca Selengkapnya</a>
+                <a href="berita_detail.php?id=<?= $item['id'] ?>" class="btn btn-primary btn-sm">Baca Selengkapnya</a>
             </div>
         </div>
     </div>
