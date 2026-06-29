@@ -1,303 +1,880 @@
 # Panduan Praktikum Keamanan Web Desa
 
+> **Versi**: 3.0 — Menggunakan **Burp Suite Community Edition** sebagai alat utama pengamatan lalu lintas HTTP.
+
+---
+
+## Daftar Isi
+
+1. [Pendahuluan](#1-pendahuluan)
+2. [Persiapan Umum](#2-persiapan-umum)
+3. [Instalasi & Konfigurasi Burp Suite](#3-instalasi--konfigurasi-burp-suite)
+4. [Menjalankan Project](#4-menjalankan-project)
+5. [Membuat Database](#5-membuat-database)
+6. [Memilih Branch](#6-memilih-branch)
+7. [Menjalankan Website](#7-menjalankan-website)
+8. [Percobaan 1 — SQL Injection](#percobaan-1--sql-injection)
+9. [Percobaan 2 — Password Security (Bcrypt)](#percobaan-2--password-security-bcrypt)
+10. [Percobaan 3 — Brute Force Protection (Rate Limiting)](#percobaan-3--brute-force-protection-rate-limiting)
+11. [Perbandingan Keseluruhan](#perbandingan-keseluruhan)
+12. [Troubleshooting Burp Suite](#troubleshooting-burp-suite)
+13. [Troubleshooting Umum](#troubleshooting-umum)
+14. [FAQ](#faq)
+
 ---
 
 ## 1. Pendahuluan
 
-Selamat datang di Panduan Praktikum Keamanan Web Sistem Informasi Desa! 
+Selamat datang di Panduan Praktikum Keamanan Web Sistem Informasi Desa!
 
-**Tujuan Praktikum**
-Praktikum ini dirancang untuk memberikan pemahaman dasar dan pengalaman langsung (praktik) mengenai celah keamanan yang sering terjadi pada aplikasi web, serta bagaimana cara memitigasi (memperbaiki) celah tersebut menggunakan standar keamanan terkini.
+### Tujuan Praktikum
 
-**Tujuan Project**
-Project ini merupakan replika Sistem Informasi Desa berbasis web yang sengaja dirancang memiliki kerentanan keamanan untuk tujuan edukasi. Mahasiswa diharapkan dapat bertindak sebagai *Security Analyst* untuk mengeksploitasi celah tersebut, lalu belajar menjadi *Secure Developer* untuk menambal celahnya.
+Praktikum ini dirancang untuk memberikan pemahaman dasar dan pengalaman langsung mengenai celah keamanan yang sering terjadi pada aplikasi web, serta bagaimana cara memperbaiki celah tersebut menggunakan standar keamanan terkini.
 
-**Konsep Dua Branch (Cabang)**
-Repository (kode sumber) project ini dibagi menjadi dua *branch* utama di Git:
-1. `master` → Versi yang **rentan** (vulnerable). Digunakan untuk simulasi serangan.
-2. `secure-v2` → Versi yang **aman** (secure). Digunakan untuk melihat hasil perbaikan kode keamanan.
+Pada praktikum ini, Anda akan menggunakan **Burp Suite Community Edition** — sebuah alat profesional yang digunakan oleh *Security Analyst* di seluruh dunia — untuk **mengamati lalu lintas HTTP** antara browser dan server secara langsung (*real-time*). Dengan Burp Suite, Anda bisa melihat persis apa yang dikirim browser ke server dan apa yang dijawab oleh server, termasuk data sensitif seperti username dan password.
 
-**Alasan Dibuat Dua Branch**
-Pemisahan branch ini bertujuan agar mahasiswa dapat dengan mudah membandingkan kode yang buruk (rentan) dengan kode yang baik (aman) tanpa harus takut merusak struktur aplikasi, serta merasakan dampak langsung dari perubahan kode keamanan.
+### Apa Itu HTTP?
 
-**Hasil yang Akan Dipelajari**
-Setelah menyelesaikan praktikum ini, mahasiswa akan memahami:
-- Bahaya SQL Injection dan cara menanganinya dengan *Prepared Statement*.
-- Mengapa menyimpan password dalam bentuk teks biasa sangat fatal, dan cara mengamankannya dengan *Bcrypt Hashing*.
-- Cara mencegah serangan tembak sandi otomatis (*Brute Force*) menggunakan sistem blokir sementara (*Rate Limiting*).
+HTTP (*HyperText Transfer Protocol*) adalah "bahasa" yang digunakan browser (seperti Chrome) dan server (seperti Apache) untuk berkomunikasi. Setiap kali Anda membuka halaman web atau menekan tombol Login, browser mengirim sebuah **HTTP Request** (permintaan) ke server, dan server membalas dengan **HTTP Response** (jawaban). Biasanya proses ini tidak terlihat oleh mata. Burp Suite memungkinkan kita **mengintip** percakapan rahasia ini.
+
+### Apa Itu Proxy?
+
+Proxy adalah "perantara" antara browser dan server. Bayangkan seorang penerjemah di tengah dua orang yang sedang bicara — penerjemah bisa mendengar, mencatat, bahkan mengubah isi percakapan. Burp Suite bertindak sebagai proxy: semua data dari browser melewati Burp Suite terlebih dahulu sebelum sampai ke server, sehingga kita bisa melihat isinya.
+
+### Konsep Dua Branch
+
+Repository project ini dibagi menjadi dua *branch* (cabang) utama di Git:
+
+| Branch | Peran | Kapan Digunakan |
+|:---|:---|:---|
+| `master` | Versi **rentan** (*vulnerable*) | Untuk simulasi serangan |
+| `secure-v2` | Versi **aman** (*secure*) | Untuk melihat hasil perbaikan keamanan |
+
+### Hasil yang Akan Dipelajari
+
+Setelah menyelesaikan praktikum ini, Anda akan memahami:
+
+- Bahaya **SQL Injection** dan cara menanganinya dengan *Prepared Statement*.
+- Mengapa menyimpan password dalam bentuk teks biasa sangat fatal, dan cara mengamankannya dengan **Bcrypt Hashing**.
+- Cara mencegah serangan tebak sandi otomatis (*Brute Force*) menggunakan **Rate Limiting**.
+- Cara menggunakan **Burp Suite** untuk mengamati dan menganalisis lalu lintas HTTP.
 
 ---
 
-## 2. Persiapan
+## 2. Persiapan Umum
 
-Sebelum memulai, pastikan perangkat komputer Anda sudah terinstal perlengkapan berikut:
+Pastikan komputer Anda sudah terinstal perlengkapan berikut:
 
-1. **Git**: Digunakan untuk mengunduh kode (cloning) dan berpindah branch. 
-2. **XAMPP** atau **Laragon**: Digunakan sebagai *Local Web Server*. Pastikan versi PHP yang terinstal minimal PHP 7.4 (Disarankan PHP 8.x).
-3. **Apache**: Server web (sudah satu paket dengan XAMPP/Laragon).
-4. **MySQL / MariaDB**: Server database (sudah satu paket dengan XAMPP/Laragon).
-5. **phpMyAdmin**: Aplikasi berbasis web untuk mengelola database (sudah satu paket dengan XAMPP/Laragon).
-6. **Web Browser**: Google Chrome, Mozilla Firefox, atau Microsoft Edge versi terbaru.
+| No | Software | Fungsi |
+|:---|:---|:---|
+| 1 | **Git** | Mengunduh kode (*cloning*) dan berpindah branch |
+| 2 | **XAMPP** atau **Laragon** | *Local Web Server* (berisi Apache, MySQL, phpMyAdmin) |
+| 3 | **Web Browser** (Chrome / Firefox) | Mengakses website dan mengatur proxy |
+| 4 | **Burp Suite Community Edition** | Mengamati lalu lintas HTTP |
+| 5 | **Java (JRE/JDK)** versi 17+ | Diperlukan untuk menjalankan Burp Suite |
 
 ---
 
-## 3. Menjalankan Project
+## 3. Instalasi & Konfigurasi Burp Suite
 
-Langkah pertama adalah meletakkan kode aplikasi ke dalam direktori server lokal Anda agar bisa diakses melalui browser.
+Bab ini menjelaskan cara menginstal Burp Suite, mengatur proxy browser, memasang sertifikat keamanan, dan memastikan Burp Suite berhasil menangkap *request*.
 
-1. Buka aplikasi Terminal (Command Prompt / Git Bash) di komputer Anda.
-2. Unduh project ini menggunakan Git dengan perintah berikut:
+### 3.1 Menginstal Java
+
+Burp Suite membutuhkan Java untuk berjalan. Cek apakah Java sudah terinstal:
+
+1. Buka **Command Prompt** (tekan `Win + R`, ketik `cmd`, tekan Enter).
+2. Ketik perintah berikut, lalu tekan Enter:
+   ```
+   java -version
+   ```
+3. Jika muncul tulisan seperti `java version "17.0.x"` atau lebih baru, Java sudah terinstal. **Lanjut ke langkah 3.2.**
+4. Jika muncul pesan error `'java' is not recognized...`, unduh dan instal Java dari:
+   ```
+   https://adoptium.net/
+   ```
+5. Pilih versi **JDK 17** (atau lebih baru), unduh installer-nya, lalu jalankan file `.msi` dan ikuti prosesnya hingga selesai.
+6. Setelah instalasi selesai, **tutup dan buka ulang** Command Prompt, lalu ulangi langkah 2 untuk memastikan Java sudah terdeteksi.
+
+> 📸 **[Screenshot Placeholder: Hasil perintah `java -version` di Command Prompt]**
+
+### 3.2 Mengunduh dan Menginstal Burp Suite Community Edition
+
+1. Buka browser dan kunjungi halaman resmi Burp Suite:
+   ```
+   https://portswigger.net/burp/communitydownload
+   ```
+2. Klik tombol **Download** untuk versi **Community Edition** (gratis).
+3. Pilih installer sesuai sistem operasi Anda (Windows 64-bit).
+4. Jalankan file installer yang sudah diunduh (contoh: `burpsuite_community_windows-x64_vXXXX.exe`).
+5. Ikuti langkah instalasi: klik **Next** → **Next** → **Install** → **Finish**.
+6. Setelah selesai, Burp Suite akan muncul di menu Start.
+
+> 📸 **[Screenshot Placeholder: Halaman download Burp Suite di portswigger.net]**
+
+### 3.3 Menjalankan Burp Suite untuk Pertama Kali
+
+1. Buka **Burp Suite Community Edition** dari menu Start.
+2. Pada layar pertama, pilih **Temporary Project** (project sementara), lalu klik **Next**.
+3. Pada layar kedua, pilih **Use Burp defaults** (pengaturan bawaan), lalu klik **Start Burp**.
+4. Tunggu beberapa detik hingga tampilan utama Burp Suite muncul.
+
+> 📸 **[Screenshot Placeholder: Layar awal Burp Suite — pilih Temporary Project]**
+
+> 📸 **[Screenshot Placeholder: Tampilan utama Burp Suite setelah berhasil dibuka]**
+
+### 3.4 Memastikan Proxy Burp Suite Aktif
+
+Burp Suite secara bawaan sudah menjalankan proxy di alamat `127.0.0.1` port `8080`. Untuk memastikannya:
+
+1. Di Burp Suite, klik tab **Proxy** di bagian atas.
+2. Klik sub-tab **Proxy settings** (atau **Options** di versi lama).
+3. Pastikan ada baris bertuliskan:
+   ```
+   127.0.0.1:8080   ✔ Running
+   ```
+4. Jika statusnya **Running**, berarti proxy Burp Suite sudah siap menerima koneksi dari browser Anda.
+
+> 📸 **[Screenshot Placeholder: Proxy Listeners di Burp Suite menunjukkan status Running]**
+
+### 3.5 Mengatur Proxy di Browser
+
+Agar browser mengirim semua lalu lintas HTTP melalui Burp Suite, Anda perlu mengarahkan browser ke proxy Burp Suite.
+
+#### Cara A: Menggunakan Google Chrome / Microsoft Edge (via Pengaturan Windows)
+
+1. Tekan tombol `Win + I` untuk membuka **Settings** (Pengaturan) Windows.
+2. Klik **Network & Internet** → **Proxy**.
+3. Di bagian **Manual proxy setup**, klik **Set up** (atau aktifkan toggle).
+4. Isi kolom berikut:
+   - **Address**: `127.0.0.1`
+   - **Port**: `8080`
+5. Pada kolom "Do not use proxy for these addresses", **biarkan kosong** untuk saat ini.
+6. Klik **Save** (Simpan).
+
+> 📸 **[Screenshot Placeholder: Pengaturan proxy manual di Windows Settings]**
+
+#### Cara B: Menggunakan Mozilla Firefox (Direkomendasikan — Lebih Mudah)
+
+Firefox memiliki pengaturan proxy sendiri yang terpisah dari Windows, sehingga lebih mudah diaktifkan dan dimatikan:
+
+1. Buka **Firefox**.
+2. Klik ikon **☰** (tiga garis) di kanan atas → klik **Settings** (Pengaturan).
+3. Scroll ke paling bawah hingga menemukan bagian **Network Settings**, klik **Settings...**.
+4. Pilih **Manual proxy configuration**.
+5. Isi kolom berikut:
+   - **HTTP Proxy**: `127.0.0.1`
+   - **Port**: `8080`
+6. Centang ☑ **Also use this proxy for HTTPS**.
+7. Klik **OK**.
+
+> 📸 **[Screenshot Placeholder: Pengaturan proxy manual di Firefox Network Settings]**
+
+### 3.6 Memasang Sertifikat Burp Suite (CA Certificate)
+
+Ketika Burp Suite bertindak sebagai proxy untuk koneksi HTTPS, browser akan menolak koneksi tersebut karena menganggapnya tidak aman. Anda perlu menginstal sertifikat khusus dari Burp Suite agar browser mempercayainya.
+
+> **Catatan:** Langkah ini wajib dilakukan **satu kali saja**. Setelah sertifikat terpasang, Anda tidak perlu mengulanginya.
+
+#### Langkah 1: Mengunduh Sertifikat Burp
+
+1. Pastikan **Burp Suite sudah berjalan** dan **proxy browser sudah diatur** (langkah 3.5).
+2. Buka browser yang sudah diatur proxy-nya.
+3. Ketik alamat berikut di address bar, lalu tekan Enter:
+   ```
+   http://burpsuite
+   ```
+4. Halaman Burp Suite akan muncul. Klik tombol **CA Certificate** di pojok kanan atas.
+5. File bernama `cacert.der` akan terunduh. Simpan file ini.
+
+> 📸 **[Screenshot Placeholder: Halaman http://burpsuite — klik CA Certificate]**
+
+#### Langkah 2: Menginstal Sertifikat di Browser
+
+**Untuk Google Chrome / Microsoft Edge:**
+
+1. Buka Chrome/Edge → ketik di address bar:
+   ```
+   chrome://settings/security
+   ```
+   (untuk Edge, gunakan `edge://settings/privacy`)
+2. Scroll ke bawah → klik **Manage certificates** (Kelola sertifikat).
+3. Pilih tab **Trusted Root Certification Authorities** (Otoritas Sertifikasi Akar Terpercaya).
+4. Klik **Import...** → klik **Next**.
+5. Klik **Browse**, ubah filter file ke **All Files (*.*)**, lalu pilih file `cacert.der` yang sudah diunduh.
+6. Klik **Next** → pastikan tujuan penyimpanan adalah **Trusted Root Certification Authorities** → **Next** → **Finish**.
+7. Jika muncul peringatan keamanan, klik **Yes** (Ya) untuk mengonfirmasi.
+
+**Untuk Mozilla Firefox:**
+
+1. Buka Firefox → ketik di address bar:
+   ```
+   about:preferences#privacy
+   ```
+2. Scroll ke bawah ke bagian **Certificates** → klik **View Certificates...**.
+3. Pilih tab **Authorities**.
+4. Klik **Import...** → pilih file `cacert.der`.
+5. Centang ☑ **Trust this CA to identify websites** → klik **OK**.
+
+> 📸 **[Screenshot Placeholder: Import sertifikat Burp di browser — dialog Trust]**
+
+### 3.7 Menguji Burp Suite — Memastikan Request Berhasil Ditangkap
+
+Sekarang saatnya memastikan semuanya bekerja:
+
+1. Pastikan **Burp Suite berjalan**, **proxy browser sudah diatur**, dan **sertifikat sudah terpasang**.
+2. Di Burp Suite, klik tab **Proxy** → sub-tab **HTTP history**.
+3. Pastikan tombol **Intercept** di sub-tab **Intercept** dalam keadaan **Intercept is off** (kita hanya ingin mengamati, bukan menahan *request*).
+
+   > **Penting:** Selama praktikum, pastikan Intercept selalu dalam posisi **off** kecuali diperintahkan sebaliknya. Jika Intercept aktif (*on*), halaman web Anda akan tampak "macet" karena Burp Suite menahan *request*.
+
+4. Buka browser dan akses:
+   ```
+   http://localhost/webdesa
+   ```
+5. Kembali ke Burp Suite → lihat sub-tab **HTTP history**.
+6. Jika Anda melihat daftar baris-baris *request* muncul (seperti `GET /webdesa/ HTTP/1.1`), selamat — **Burp Suite berhasil menangkap lalu lintas HTTP Anda!** ✅
+
+> 📸 **[Screenshot Placeholder: HTTP history di Burp Suite menampilkan request ke localhost/webdesa]**
+
+**Cara Membaca HTTP History:**
+
+| Kolom | Artinya |
+|:---|:---|
+| **#** | Nomor urut *request* |
+| **Host** | Alamat server tujuan (contoh: `localhost`) |
+| **Method** | Jenis permintaan: `GET` = meminta halaman, `POST` = mengirim data (misal form login) |
+| **URL** | Alamat halaman yang diminta |
+| **Status** | Kode jawaban server: `200` = berhasil, `302` = dialihkan, `404` = tidak ditemukan |
+| **Length** | Ukuran jawaban dari server |
+
+**Cara Melihat Detail Sebuah Request:**
+
+1. Klik salah satu baris *request* di HTTP history.
+2. Di panel bawah, klik tab **Request** untuk melihat apa yang dikirim browser.
+3. Klik tab **Response** untuk melihat apa yang dijawab server.
+
+---
+
+## 4. Menjalankan Project
+
+1. Buka Terminal (Command Prompt / Git Bash).
+2. Unduh project menggunakan Git:
    ```bash
    git clone https://github.com/fannndi/webdesa.git
    ```
-3. Pindahkan folder `webdesa` hasil unduhan ke dalam direktori *document root* web server lokal Anda:
-   - Jika Anda menggunakan **XAMPP**, letakkan folder di dalam:
-     ```text
+3. Pindahkan folder `webdesa` ke dalam direktori web server lokal Anda:
+   - **XAMPP:**
+     ```
      C:\xampp\htdocs\webdesa
      ```
-   - Jika Anda menggunakan **Laragon**, letakkan folder di dalam:
-     ```text
+   - **Laragon:**
+     ```
      C:\laragon\www\webdesa
      ```
 
-**Mengapa harus diletakkan di sana?**
-Aplikasi yang dibangun dengan PHP tidak bisa langsung dibuka dengan klik dua kali (seperti file HTML biasa). File PHP harus diterjemahkan (di-parsing) oleh Web Server (Apache) terlebih dahulu. Folder `htdocs` atau `www` adalah tempat Apache mencari file web untuk ditampilkan.
-
----
-
-## 4. Menjalankan Apache dan MySQL
-
-Agar aplikasi dan databasenya bisa hidup, Anda perlu mengaktifkan dua layanan utama:
-
-**Jika menggunakan XAMPP:**
-1. Buka aplikasi **XAMPP Control Panel**.
-2. Klik tombol **Start** pada baris **Apache**. (Tunggu hingga tulisan Apache berlatar hijau).
-3. Klik tombol **Start** pada baris **MySQL**. (Tunggu hingga tulisan MySQL berlatar hijau).
-
-**Jika menggunakan Laragon:**
-1. Buka aplikasi **Laragon**.
-2. Klik tombol **Start All**.
-3. Pastikan Apache dan MySQL sudah berstatus *Running*.
+> **Mengapa harus diletakkan di sana?**
+> File PHP tidak bisa langsung dibuka dengan klik dua kali. File PHP harus diterjemahkan oleh Web Server (Apache) terlebih dahulu. Folder `htdocs` atau `www` adalah tempat Apache mencari file web.
 
 ---
 
 ## 5. Membuat Database
 
-Aplikasi Web Desa membutuhkan database untuk menyimpan data warga, berita, dan akun login.
+### 5.1 Menjalankan Apache dan MySQL
 
-1. Buka browser dan akses **phpMyAdmin** melalui URL berikut:
-   ```text
+**XAMPP:**
+1. Buka **XAMPP Control Panel**.
+2. Klik **Start** pada baris **Apache** (tunggu hingga berlatar hijau).
+3. Klik **Start** pada baris **MySQL** (tunggu hingga berlatar hijau).
+
+**Laragon:**
+1. Buka **Laragon** → klik **Start All**.
+
+### 5.2 Import Database
+
+1. Buka browser dan akses:
+   ```
    http://localhost/phpmyadmin
    ```
-2. Pada panel kiri, klik tombol **New** (Baru) untuk membuat database.
-3. Beri nama database dengan: `webdesa`, lalu klik tombol **Create** (Buat).
-4. Setelah database `webdesa` terbuat, klik nama database tersebut di panel sebelah kiri.
-5. Klik tab **Import** di deretan menu bagian atas.
-6. Klik tombol **Choose File** (Pilih File) atau **Browse**.
-7. Cari folder project Anda (`htdocs/webdesa/database`), lalu pilih file bernama `schema.sql`.
-8. Scroll ke bawah dan klik tombol **Go** (Kirim) untuk meng-import tabel.
-9. Ulangi langkah ke-5 hingga ke-8, namun kali ini pilih file `dummy_data.sql` untuk memasukkan data contoh.
+2. Pada panel kiri, klik **New** (Baru) untuk membuat database.
+3. Beri nama database: `webdesa`, lalu klik **Create**.
+4. Klik nama database `webdesa` di panel kiri.
+5. Klik tab **Import** di menu atas.
+6. Klik **Choose File** → cari folder `htdocs/webdesa/database` → pilih file `schema.sql`.
+7. Scroll ke bawah → klik **Go**.
+8. Ulangi langkah 5–7, namun kali ini pilih file `dummy_data.sql`.
 
-> **⚠️ CATATAN PENTING**: 
-> Setiap kali Anda berpindah branch (dari `master` ke `secure-v2` atau sebaliknya), struktur database yang dibutuhkan bisa sedikit berbeda (terutama bentuk sandi dan tabel log). Oleh karena itu, Anda **Wajib melakukan import ulang (Timpa) file `schema.sql` dan `dummy_data.sql`** setiap selesai melakukan perpindahan branch.
+> ⚠️ **CATATAN PENTING:**
+> Setiap kali Anda berpindah branch (dari `master` ke `secure-v2` atau sebaliknya), Anda **WAJIB** melakukan import ulang (timpa) kedua file `schema.sql` dan `dummy_data.sql`. Struktur database kedua branch berbeda!
+
+> 📸 **[Screenshot Placeholder: phpMyAdmin — proses import schema.sql berhasil]**
 
 ---
 
 ## 6. Memilih Branch
 
-Buka Terminal (atau Command Prompt / Git Bash) dan arahkan ke dalam folder project Anda:
+Buka Terminal dan arahkan ke folder project:
 ```bash
 cd C:\xampp\htdocs\webdesa
 ```
 
-Untuk praktikum ini, Anda akan sering berpindah branch.
-- **`master`**: Branch utama yang rentan. Gunakan ini untuk **Simulasi Serangan**.
+Untuk berpindah branch:
+
+- **Branch Rentan** (untuk simulasi serangan):
   ```bash
   git checkout master
   ```
-- **`secure-v2`**: Branch keamanan. Gunakan ini untuk **Melihat Hasil Perbaikan (Implementasi Keamanan)**.
+- **Branch Aman** (untuk melihat perbaikan keamanan):
   ```bash
   git checkout secure-v2
   ```
 
-*(Pastikan Terminal Anda menunjukkan keterangan "Switched to branch...")*
+Pastikan Terminal menunjukkan pesan `Switched to branch '...'`.
+
+> ⚠️ **Jangan lupa:** Setiap kali pindah branch → **import ulang database** di phpMyAdmin!
 
 ---
 
 ## 7. Menjalankan Website
 
-Jika Apache dan MySQL sudah menyala, serta database sudah dibuat, saatnya melihat aplikasi:
+Jika Apache, MySQL, dan database sudah siap:
 
-1. Buka tab baru di browser Anda.
-2. Akses alamat berikut:
-   ```text
+1. Buka browser.
+2. Akses:
+   ```
    http://localhost/webdesa
    ```
-3. Jika Anda melihat halaman utama portal "Web Desa", berarti project berhasil dijalankan!
+3. Jika halaman portal "Web Desa" muncul, project berhasil dijalankan!
+
+> 📸 **[Screenshot Placeholder: Halaman utama Web Desa di browser]**
 
 ---
 
 # Praktikum
 
-## Percobaan 1: SQL Injection
+> **Sebelum memulai setiap percobaan**, pastikan:
+> 1. Burp Suite **sudah berjalan**.
+> 2. Proxy browser **sudah diarahkan** ke `127.0.0.1:8080`.
+> 3. Intercept dalam keadaan **off** (kecuali diperintahkan sebaliknya).
+> 4. Anda membuka tab **Proxy → HTTP history** di Burp Suite untuk mengamati.
+
+---
+
+## Percobaan 1 — SQL Injection
 
 ### Pendahuluan
-- **Apa itu?** Serangan di mana peretas menyisipkan perintah SQL jahat ke dalam input form login untuk memanipulasi logika *database*.
-- **Mengapa penting?** SQLi adalah salah satu kerentanan paling berbahaya di web, yang dapat membuat peretas mencuri seluruh data atau melewati sistem login.
-- **Tujuan praktikum:** Memahami bagaimana input yang tidak divalidasi dapat menghancurkan logika query, dan mempraktikkan mitigasinya dengan *Prepared Statement*.
+
+| Item | Keterangan |
+|:---|:---|
+| **Apa itu?** | Serangan di mana peretas menyisipkan perintah SQL jahat ke dalam form input (seperti form login) untuk memanipulasi logika database. |
+| **Mengapa penting?** | SQL Injection adalah salah satu kerentanan paling berbahaya. Peretas bisa mencuri data atau melewati sistem login tanpa mengetahui password. |
+| **Tujuan percobaan** | Memahami bagaimana input yang tidak divalidasi dapat menghancurkan logika *query*, dan mempraktikkan mitigasinya dengan *Prepared Statement*. |
+
+### Tujuan Pengamatan di Burp Suite
+
+Anda akan mengamati **POST request** yang dikirim saat menekan tombol Login. Perhatikan:
+- **Parameter** `username` dan `password` yang dikirim ke server.
+- **Response** dari server: apakah server mengarahkan Anda ke Dashboard (login berhasil) atau kembali ke halaman login (login gagal).
 
 ### Persiapan
-- **Branch**: `master` (Untuk menyerang) dan `secure-v2` (Untuk menahan serangan).
-- **Database**: `webdesa`.
+
+- **Branch awal**: `master`
+- **Database**: `webdesa` (sudah di-import)
 - **Halaman yang diuji**: `http://localhost/webdesa/admin/login.php`
 
 ### Langkah Praktikum
-**Fase 1: Penyerangan (Branch `master`)**
-1. Pastikan Anda berada di branch `master` (`git checkout master`), lalu import ulang databasenya jika perlu.
-2. Buka `http://localhost/webdesa/admin/login.php`.
-3. Pada form **Username**, ketikkan *payload* (kode) berikut persis seperti ini:
-   ```text
-   admin' OR '1'='1
+
+#### Fase 1: Penyerangan (Branch `master`)
+
+1. Pastikan Anda berada di branch `master`:
+   ```bash
+   git checkout master
    ```
-4. Pada form **Password**, ketikkan sembarang huruf, misal: `rahasia123`.
-5. Klik **Login**.
+   Import ulang database jika belum dilakukan.
 
-**Fase 2: Mitigasi (Branch `secure-v2`)**
-6. Di Terminal, pindah ke branch aman: `git checkout secure-v2`. (Jangan lupa import ulang file SQL di phpMyAdmin).
-7. *Refresh* halaman login Anda (F5).
-8. Ulangi kembali langkah 3 dan 4 (masukkan payload `admin' OR '1'='1` di Username).
-9. Klik **Login**.
+2. Di Burp Suite, klik tab **Proxy → HTTP history**. Bersihkan history sebelumnya dengan klik kanan → **Clear history** (opsional, agar lebih mudah diamati).
 
-### Hasil yang Diharapkan
-- **Di Fase 1 (`master`)**: Anda **BERHASIL MASUK** ke halaman Dashboard Admin secara instan.
-- **Di Fase 2 (`secure-v2`)**: Anda **GAGAL MASUK** dan melihat notifikasi merah *"Username atau password salah"*.
+   > 📸 **[Screenshot Placeholder: HTTP history kosong — siap mengamati]**
 
-### Penjelasan
-Di versi `master`, sistem menggabungkan teks Anda langsung menjadi perintah:
-`SELECT * FROM users WHERE username = 'admin' OR '1'='1' AND password = '...'`
-Karena matematika `1=1` adalah **selalu benar (True)**, sistem otomatis mengabaikan password dan mengizinkan masuk!
+3. Buka browser dan akses:
+   ```
+   http://localhost/webdesa/admin/login.php
+   ```
 
-Di versi `secure-v2`, metode *Prepared Statement* telah diaktifkan. Sistem membungkus input secara ketat. Tulisan `admin' OR '1'='1` hanya dianggap sebagai *sebuah string nama* biasa, bukan sebagai perintah operasi. Karena tidak ada orang yang bernama aneh seperti itu, maka login tertolak.
+4. Pada form login, masukkan data berikut:
+   - **Username**:
+     ```
+     admin' OR '1'='1
+     ```
+   - **Password** (isi sembarang):
+     ```
+     rahasia123
+     ```
 
-### Kesimpulan
-Mahasiswa mengerti bahayanya input langsung ke *query* database dan memahami bahwa perlindungan terbaik terhadap SQLi adalah pemisahan ketat antara perintah SQL dan data input menggunakan *Prepared Statement*.
+5. Klik tombol **Login**.
+
+6. **Amati di Browser:** Anda langsung masuk ke halaman **Dashboard Admin** tanpa mengetahui password yang benar. ⚠️ Ini adalah bukti kerentanan SQL Injection!
+
+   > 📸 **[Screenshot Placeholder: Browser — berhasil masuk ke Dashboard Admin menggunakan payload SQLi]**
+
+7. **Amati di Burp Suite:** Kembali ke Burp Suite → lihat **HTTP history**. Cari baris dengan:
+   - **Method**: `POST`
+   - **URL**: `/webdesa/admin/login.php`
+
+8. Klik baris tersebut. Di panel bawah, klik tab **Request**. Anda akan melihat isi data yang dikirim browser:
+   ```
+   username=admin'+OR+'1'%3D'1&password=rahasia123
+   ```
+   > **Penjelasan:** Karakter khusus seperti `'` dan `=` diubah menjadi kode URL (*URL encoding*): `'` menjadi `%27`, `=` menjadi `%3D`. Ini normal — browser otomatis melakukannya.
+
+   > 📸 **[Screenshot Placeholder: Burp Suite — Request tab menampilkan parameter username berisi payload SQLi]**
+
+9. Klik tab **Response**. Perhatikan:
+   - Kode status: **302 Found** (artinya server mengarahkan Anda ke halaman lain — Dashboard).
+   - Header `Location: dashboard.php` — ini membuktikan server mengizinkan Anda masuk.
+
+   > 📸 **[Screenshot Placeholder: Burp Suite — Response tab menampilkan status 302 redirect ke dashboard.php]**
+
+#### Fase 2: Mitigasi (Branch `secure-v2`)
+
+10. Di Terminal, pindah ke branch aman:
+    ```bash
+    git checkout secure-v2
+    ```
+    **Import ulang database** di phpMyAdmin (wajib!).
+
+11. Di Burp Suite, bersihkan HTTP history (klik kanan → **Clear history**).
+
+12. Buka browser dan akses kembali:
+    ```
+    http://localhost/webdesa/admin/login.php
+    ```
+
+13. Masukkan **payload yang sama persis**:
+    - **Username**: `admin' OR '1'='1`
+    - **Password**: `rahasia123`
+
+14. Klik **Login**.
+
+15. **Amati di Browser:** Anda **GAGAL MASUK**. Muncul notifikasi merah: *"Username atau password salah"*. ✅
+
+    > 📸 **[Screenshot Placeholder: Browser — login ditolak dengan pesan error di branch secure-v2]**
+
+16. **Amati di Burp Suite:** Cari request `POST /webdesa/admin/login.php` di HTTP history.
+
+17. Klik baris tersebut → tab **Request**: parameter yang dikirim **sama persis** dengan Fase 1.
+    ```
+    username=admin'+OR+'1'%3D'1&password=rahasia123
+    ```
+
+18. Klik tab **Response**: Perhatikan perbedaannya:
+    - Kode status: **200 OK** (server tidak mengarahkan ke Dashboard, melainkan menampilkan ulang halaman login).
+    - Di dalam body HTML, terdapat pesan: `Username atau password salah`.
+
+    > 📸 **[Screenshot Placeholder: Burp Suite — Response di secure-v2 menampilkan status 200 dan pesan error]**
+
+### Perbandingan Hasil di Burp Suite
+
+| Aspek | Branch `master` (Rentan) | Branch `secure-v2` (Aman) |
+|:---|:---|:---|
+| **Parameter yang dikirim** | `username=admin'+OR+'1'%3D'1` | `username=admin'+OR+'1'%3D'1` (sama) |
+| **Status Response** | `302 Found` (redirect ke Dashboard) | `200 OK` (tetap di halaman login) |
+| **Header Location** | `Location: dashboard.php` | Tidak ada |
+| **Isi Response** | Halaman Dashboard | Pesan *"Username atau password salah"* |
+
+### Indikator Keamanan Bekerja
+
+✅ Request `POST` dengan payload SQLi **tetap dikirim** (parameternya sama), tetapi server **menolak** login karena menggunakan *Prepared Statement* — input diperlakukan sebagai teks biasa, bukan perintah SQL.
+
+### Penjelasan Teknis
+
+Di versi `master`, server menggabungkan input Anda langsung ke dalam perintah SQL:
+```sql
+SELECT * FROM users WHERE username = 'admin' OR '1'='1' AND password = '...'
+```
+Karena `1=1` selalu benar, server mengabaikan password dan mengizinkan masuk.
+
+Di versi `secure-v2`, *Prepared Statement* memisahkan perintah SQL dari data input. Tulisan `admin' OR '1'='1` hanya dianggap sebagai sebuah nama biasa — dan karena tidak ada pengguna bernama seperti itu, login ditolak.
 
 ---
 
-## Percobaan 2: Password Security (Menggunakan Bcrypt)
+## Percobaan 2 — Password Security (Bcrypt)
 
 ### Pendahuluan
-- **Apa itu?** Kriptografi sandi. Mengacak password dari bentuk teks telanjang (*plaintext*) menjadi sandi rumit (*hash*) satu arah.
-- **Mengapa penting?** Kebocoran database adalah hal yang sering terjadi. Jika database bocor, peretas tidak boleh bisa membaca password asli pengguna untuk mencegah mereka membajak akun media sosial lain milik pengguna (karena kebiasaan orang menyamakan password).
-- **Tujuan praktikum:** Melihat bahaya penyimpanan teks biasa dan melihat perlindungan dari Hashing standar industri (Bcrypt).
+
+| Item | Keterangan |
+|:---|:---|
+| **Apa itu?** | Kriptografi sandi — mengacak password dari teks biasa (*plaintext*) menjadi sandi rumit (*hash*) satu arah. |
+| **Mengapa penting?** | Kebocoran database sering terjadi. Jika password tersimpan dalam bentuk teks biasa, peretas langsung mengetahui password asli semua pengguna. |
+| **Tujuan percobaan** | Melihat bahaya penyimpanan teks biasa dan melihat perlindungan dari *Bcrypt Hashing*. |
+
+### Tujuan Pengamatan di Burp Suite
+
+Anda akan mengamati **POST request** saat login berhasil di kedua branch, lalu membandingkan **bagaimana password dikirim dari browser** dan **bagaimana password tersimpan di database**.
 
 ### Persiapan
-- **Branch**: `master` dan `secure-v2`.
-- **Database**: `webdesa`.
-- **Halaman yang diuji**: `http://localhost/phpmyadmin` (Tabel `users`) dan `http://localhost/webdesa/admin/users.php`.
+
+- **Branch**: `master` dan `secure-v2`
+- **Database**: `webdesa`
+- **Halaman yang diuji**:
+  - `http://localhost/webdesa/admin/login.php` (form login)
+  - `http://localhost/phpmyadmin` (melihat isi tabel `users`)
 
 ### Langkah Praktikum
-**Fase 1: Mengintip Database Rentan (Branch `master`)**
-1. Pastikan Anda berada di branch `master` dan telah meng-import database-nya.
-2. Buka **phpMyAdmin**.
-3. Buka tabel `users`.
-4. Lihat dengan mata Anda pada kolom `password`.
 
-**Fase 2: Mengintip Database Aman (Branch `secure-v2`)**
-5. Pindah ke branch `secure-v2` (`git checkout secure-v2`).
-6. Buka kembali **phpMyAdmin** dan Import ulang database (karena ini wajib setiap pindah branch).
-7. Buka tabel `users`.
-8. Bandingkan kolom `password` dengan Fase 1.
-9. Opsional: Di web, masuk dengan username: `admin` dan password: `admin123`.
-10. Masuk ke halaman **Manajemen Pengguna**, coba gunakan fitur Tambah Pengguna. Lalu cek lagi tabel di phpMyAdmin untuk melihat password pengguna baru.
+#### Fase 1: Mengintip Database Rentan (Branch `master`)
 
-### Hasil yang Diharapkan
-- **Di Fase 1 (`master`)**: Pada kolom `password`, tulisan `admin123` terbaca dengan sangat jelas.
-- **Di Fase 2 (`secure-v2`)**: Tulisan `admin123` telah berubah menjadi teks acak yang panjang, misalnya: `$2y$12$c73y1dfyUZvvaDof9x66.aVarJfw...`
+1. Pastikan branch `master` dan database sudah di-import.
 
-### Penjelasan
-Di versi rentan, web membuang password langsung ke keranjang database apa adanya. Siapapun yang melihat isi keranjang bisa langsung tahu passwordnya.
-Di versi aman, web menggunakan fungsi bawaan PHP `password_hash()` yang mengubah teks biasa menjadi algoritma *Bcrypt*. Sandi Bcrypt bersifat satu arah (tidak bisa dikembalikan ke kata asli) dan menghasilkan *salt* acak, sehingga meski dua orang memiliki password "12345", hasil acakannya akan tetap berbeda!
+2. Buka **phpMyAdmin** di browser:
+   ```
+   http://localhost/phpmyadmin
+   ```
 
-### Kesimpulan
-Mahasiswa menyadari bahwa menyimpan data rahasia dalam bentuk Plaintext adalah pelanggaran etika programming. Dan fungsi standar Bcrypt adalah cara paling efisien dan diakui secara global untuk menyimpan sandi.
+3. Klik database `webdesa` di panel kiri → klik tabel `users` → klik tab **Browse**.
+
+4. Amati kolom `password`:
+   - Tertulis **`admin123`** dan **`petugas123`** secara jelas dan terang benderang.
+   - Siapapun yang melihat database ini (termasuk hacker yang berhasil membobol server) langsung mengetahui password semua pengguna!
+
+   > 📸 **[Screenshot Placeholder: phpMyAdmin — tabel users di branch master, password terlihat plaintext]**
+
+5. Sekarang amati di Burp Suite. Bersihkan HTTP history, lalu lakukan login normal:
+   - **Username**: `admin`
+   - **Password**: `admin123`
+   - Klik **Login**.
+
+6. Di Burp Suite, cari `POST /webdesa/admin/login.php`. Klik → tab **Request**:
+   ```
+   username=admin&password=admin123
+   ```
+   > **Perhatikan:** Password dikirim dalam bentuk **teks biasa** di dalam request HTTP. Di sisi server, password ini juga **disimpan dalam bentuk teks biasa** di database. Tidak ada perlindungan sama sekali.
+
+   > 📸 **[Screenshot Placeholder: Burp Suite — Request menunjukkan password=admin123 dikirim plaintext]**
+
+#### Fase 2: Mengintip Database Aman (Branch `secure-v2`)
+
+7. Pindah ke branch `secure-v2` dan **import ulang database** (wajib!):
+   ```bash
+   git checkout secure-v2
+   ```
+
+8. Buka kembali **phpMyAdmin** → database `webdesa` → tabel `users` → tab **Browse**.
+
+9. Amati kolom `password`:
+   - Tulisan `admin123` telah **berubah menjadi teks acak panjang**, misalnya:
+     ```
+     $2y$10$2LG1U2M/l424bGlGeTD1WeSa1a6OrXOID8Z0c1xgi/wX2JEoL/hMW
+     ```
+   - Ini adalah **hash Bcrypt**. Tidak ada cara untuk mengubahnya kembali menjadi `admin123`.
+
+   > 📸 **[Screenshot Placeholder: phpMyAdmin — tabel users di branch secure-v2, password berbentuk hash Bcrypt]**
+
+10. Bersihkan HTTP history di Burp Suite, lalu login dengan:
+    - **Username**: `admin`
+    - **Password**: `admin123`
+    - Klik **Login**.
+
+11. Di Burp Suite, cari `POST /webdesa/admin/login.php`. Klik → tab **Request**:
+    ```
+    username=admin&password=admin123
+    ```
+    > **Perhatikan:** Password yang **dikirim browser tetap sama** (`admin123`). Perbedaannya ada di **sisi server**: server tidak lagi membandingkan teks langsung, tetapi menggunakan fungsi `password_verify()` untuk membandingkan hash.
+
+    > 📸 **[Screenshot Placeholder: Burp Suite — Request di secure-v2, password tetap dikirim plaintext dari browser]**
+
+12. Klik tab **Response**:
+    - Status: **302 Found** → `Location: dashboard.php` — login berhasil!
+    - Meskipun di database tersimpan hash acak, server berhasil memverifikasi bahwa `admin123` cocok dengan hash tersebut.
+
+    > 📸 **[Screenshot Placeholder: Burp Suite — Response 302 redirect ke dashboard di secure-v2]**
+
+### Perbandingan Hasil di Burp Suite
+
+| Aspek | Branch `master` (Rentan) | Branch `secure-v2` (Aman) |
+|:---|:---|:---|
+| **Password di Request HTTP** | `password=admin123` | `password=admin123` (sama) |
+| **Password di Database** | `admin123` (plaintext) | `$2y$10$2LG1U2M/...` (Bcrypt hash) |
+| **Metode Pencocokan** | String comparison (`==`) | `password_verify()` |
+| **Jika Database Bocor** | Peretas langsung tahu password | Peretas hanya dapat hash yang tidak berguna |
+
+### Indikator Keamanan Bekerja
+
+✅ Di Burp Suite, request dari browser **terlihat sama** di kedua branch. Perbedaan keamanan terjadi **di sisi server** (database) — bukan di jaringan. Bukti keamanan terlihat di phpMyAdmin: password tersimpan dalam bentuk hash, bukan teks biasa.
+
+### Penjelasan Teknis
+
+Bcrypt adalah algoritma *hashing* satu arah. Berbeda dengan enkripsi yang bisa dikembalikan (di-dekripsi), hash **tidak bisa dibalik**. PHP menyediakan:
+- `password_hash('admin123', PASSWORD_BCRYPT)` → menghasilkan hash acak.
+- `password_verify('admin123', $hash)` → mengecek apakah teks cocok dengan hash, **tanpa** perlu mengetahui isi asli hash.
+
+Bahkan jika dua orang memiliki password yang sama (`admin123`), hash yang dihasilkan tetap **berbeda** karena setiap hash memiliki *salt* (bumbu acak) unik.
 
 ---
 
-## Percobaan 3: Brute Force Protection (Rate Limiting)
+## Percobaan 3 — Brute Force Protection (Rate Limiting)
 
 ### Pendahuluan
-- **Apa itu?** Brute Force adalah teknik menyerang di mana *hacker* mencoba menebak password dengan cepat dan berulang kali (ribuan kali per menit) menggunakan bot/skrip sampai menemukan kata sandi yang tepat.
-- **Mengapa penting?** Sebanyak apapun keamanan sandi, jika pintu login terbuka lebar untuk ditebak tiada henti, perlahan peretas pasti akan menemukan kombinasi sandi yang benar.
-- **Tujuan praktikum:** Menerapkan pembatasan hitungan gagal (*Rate Limiting*) untuk menghentikan serangan otomatis.
+
+| Item | Keterangan |
+|:---|:---|
+| **Apa itu?** | Brute Force adalah teknik serangan di mana hacker mencoba menebak password dengan cepat dan berulang kali (ribuan kali per menit) menggunakan bot/skrip. |
+| **Mengapa penting?** | Jika pintu login terbuka tanpa batas, peretas pasti akhirnya menemukan password yang benar — hanya masalah waktu. |
+| **Tujuan percobaan** | Menerapkan pembatasan percobaan login gagal (*Rate Limiting*) untuk menghentikan serangan otomatis. |
+
+### Tujuan Pengamatan di Burp Suite
+
+Anda akan mengamati **beberapa POST request login gagal berturut-turut** dan membandingkan:
+- Di `master`: server selalu menjawab dengan cara yang sama (tidak ada pembatasan).
+- Di `secure-v2`: setelah 5 kali gagal, server menjawab dengan pesan blokir.
 
 ### Persiapan
-- **Branch**: `master` dan `secure-v2`.
-- **Database**: `webdesa`.
+
+- **Branch**: `master` dan `secure-v2`
+- **Database**: `webdesa`
 - **Halaman yang diuji**: `http://localhost/webdesa/admin/login.php`
 
 ### Langkah Praktikum
-**Fase 1: Diserbu Tanpa Ampun (Branch `master`)**
-1. Pastikan branch `master` dan database sudah sesuai.
-2. Buka `http://localhost/webdesa/admin/login.php`.
-3. Masukkan Username: `admin`, Password: `salah1`, klik Login.
-4. Muncul tulisan Username atau Password salah.
-5. Ulangi kembali langkah 3 secara berulang-ulang, tekan secepat mungkin (sebanyak 10-15 kali).
 
-**Fase 2: Pemblokiran Otomatis (Branch `secure-v2`)**
-6. Ubah branch ke `secure-v2` dan import databasenya.
-7. Buka halaman login admin.
-8. Masukkan Username: `admin`, Password: `salah2`.
-9. Klik Login. Muncul error password salah.
-10. Ulangi menekan tombol Login dengan password yang sengaja disalahkan sebanyak **5 kali**.
-11. Perhatikan pada klik ke-6.
+#### Fase 1: Diserbu Tanpa Ampun (Branch `master`)
 
-### Hasil yang Diharapkan
-- **Di Fase 1 (`master`)**: Web terus menerus melayani klik login Anda tanpa batasan. Bot milik hacker bisa melakukan ini seumur hidup sampai password ketemu.
-- **Di Fase 2 (`secure-v2`)**: Pada klik ke-6, web menolak permintaan Anda dan memunculkan notifikasi merah: **"Terlalu banyak percobaan login. Coba lagi dalam 15 menit."** 
+1. Pastikan branch `master` dan database sudah di-import.
 
-### Penjelasan
-Di versi aman, kita telah membuat sebuah tabel baru bernama `login_attempts` di database. Setiap kali sebuah Alamat IP (IP Address) gagal login, web mencatatnya. Ketika web mendeteksi ada IP yang telah gagal 5 kali berturut-turut, sistem seketika mengunci akses dari IP tersebut selama 15 menit ke depan, merusak laju serangan *bot* yang mengandalkan kecepatan. Anda bahkan bisa melihat IP mana yang sedang dihukum di halaman Dashboard Admin.
+2. Bersihkan HTTP history di Burp Suite.
 
-### Kesimpulan
-Mahasiswa belajar pentingnya mendeteksi *anomali* (ketidakwajaran) aktivitas pengguna, serta melindungi *endpoint* autentikasi dengan pembatasan (*Rate Limiting*).
+3. Buka browser dan akses:
+   ```
+   http://localhost/webdesa/admin/login.php
+   ```
+
+4. Lakukan **login gagal berulang kali** (minimal 7 kali) dengan data berikut:
+   - **Username**: `admin`
+   - **Password**: `salah1` (atau sembarang password yang salah)
+   - Klik **Login** → muncul error → ulangi terus.
+
+5. **Amati di Browser:** Setiap kali klik Login, pesan error yang sama muncul: *"Username atau password salah"*. Tidak ada pembatasan — Anda bisa mencoba selamanya.
+
+   > 📸 **[Screenshot Placeholder: Browser — login gagal ke-7 di master, tetap bisa mencoba]**
+
+6. **Amati di Burp Suite:** Lihat HTTP history. Anda akan melihat **7 baris POST request** berturut-turut, semuanya ke `/webdesa/admin/login.php`.
+
+7. Klik setiap baris POST. Perhatikan tab **Response** semuanya:
+   - Status: **200 OK**
+   - Body berisi pesan *"Username atau password salah"*
+   - **Tidak ada perbedaan antara percobaan ke-1 dan ke-7.** Server tidak pernah menolak atau memblokir.
+
+   > 📸 **[Screenshot Placeholder: Burp Suite — HTTP history menunjukkan 7 POST request berturut-turut, semua status 200]**
+
+   > 📸 **[Screenshot Placeholder: Burp Suite — Response percobaan ke-7, masih pesan error biasa tanpa blokir]**
+
+#### Fase 2: Pemblokiran Otomatis (Branch `secure-v2`)
+
+8. Pindah ke branch `secure-v2` dan **import ulang database** (wajib!):
+   ```bash
+   git checkout secure-v2
+   ```
+
+9. Bersihkan HTTP history di Burp Suite.
+
+10. Buka browser dan akses kembali:
+    ```
+    http://localhost/webdesa/admin/login.php
+    ```
+
+11. Lakukan **login gagal sebanyak 5 kali**:
+    - **Username**: `admin`
+    - **Password**: `salah2` (atau sembarang password yang salah)
+    - Klik **Login** → muncul error → ulangi (total 5 kali).
+
+12. Pada percobaan **ke-6**, masukkan lagi data yang salah dan klik **Login**.
+
+13. **Amati di Browser:** Pesan error berubah menjadi:
+    > **"Terlalu banyak percobaan login. Coba lagi dalam 15 menit."** 🔒
+
+    > 📸 **[Screenshot Placeholder: Browser — pesan rate limit muncul pada percobaan ke-6 di secure-v2]**
+
+14. **Amati di Burp Suite:** Lihat HTTP history. Anda akan melihat **6 baris POST request**.
+
+15. Klik **POST request ke-1 sampai ke-5**. Pada tab **Response**, semuanya menunjukkan:
+    - Status: **200 OK**
+    - Body berisi: *"Username atau password salah"*
+
+16. Klik **POST request ke-6**. Pada tab **Response**, perhatikan perbedaannya:
+    - Status: **200 OK** (atau **403 Forbidden**, tergantung implementasi)
+    - Body berisi: *"Terlalu banyak percobaan login. Coba lagi dalam 15 menit."*
+    - **Ini adalah bukti Rate Limiting bekerja!** ✅
+
+    > 📸 **[Screenshot Placeholder: Burp Suite — Response percobaan ke-6 menunjukkan pesan rate limit]**
+
+17. **(Opsional)** Coba login lagi beberapa kali. Semua percobaan selanjutnya akan langsung diblokir — server bahkan tidak mau memeriksa password Anda lagi.
+
+    > 📸 **[Screenshot Placeholder: Burp Suite — Response percobaan ke-7 dan seterusnya tetap diblokir]**
+
+### Perbandingan Hasil di Burp Suite
+
+| Aspek | Branch `master` (Rentan) | Branch `secure-v2` (Aman) |
+|:---|:---|:---|
+| **Percobaan ke-1 s/d ke-5** | Pesan: *"Username atau password salah"* | Pesan: *"Username atau password salah"* (sama) |
+| **Percobaan ke-6** | Pesan: *"Username atau password salah"* (masih sama!) | Pesan: **"Terlalu banyak percobaan login..."** 🔒 |
+| **Percobaan ke-7 dan seterusnya** | Tetap dilayani tanpa batas | Semua **langsung diblokir** |
+| **Jumlah POST yang dilayani** | Tidak terbatas | Maksimal 5 percobaan per 15 menit |
+
+### Indikator Keamanan Bekerja
+
+✅ Setelah percobaan ke-5, semua POST request berikutnya di Burp Suite mendapat response berisi pesan blokir, bukan pesan error biasa. Server menolak memproses login lebih lanjut dari IP yang sama.
+
+### Penjelasan Teknis
+
+Di versi aman, sebuah tabel `login_attempts` di database mencatat setiap kegagalan login berdasarkan alamat IP. Ketika sebuah IP sudah mencapai 5 kali gagal dalam 15 menit terakhir, fungsi `check_rate_limit()` langsung menolak semua request berikutnya tanpa memeriksa password. Ini merusak strategi *brute force* yang mengandalkan kecepatan dan volume percobaan.
+
+> **Tips:** Jika Anda ingin mereset blokir untuk melanjutkan percobaan, buka phpMyAdmin → tabel `login_attempts` → centang semua baris → klik **Delete**. Blokir langsung dicabut.
 
 ---
 
-# Perbandingan Keseluruhan
+## Perbandingan Keseluruhan
 
-| Fitur Keamanan | Kondisi di Branch `master` (Rentan) | Kondisi di Branch `secure-v2` (Aman) |
-| :--- | :--- | :--- |
-| **SQL Injection** | Rentan. Input teks disatukan langsung dengan perintah SQL (*Concatenation*). | Aman. Kode dipisahkan dari input pengguna (menggunakan *Prepared Statement*). |
-| **Penyimpanan Password** | Rentan. Disimpan telanjang tanpa pengamanan (*Plaintext*). | Aman. Menggunakan teknik *hashing Bcrypt* searah. |
-| **Serangan Brute Force**| Rentan. Hacker bisa menebak login berjuta-juta kali tanpa henti. | Aman. Jika gagal login 5 kali, akses diblokir selama 15 menit (*Rate Limiting*). |
-
----
-
-# Troubleshooting (Penyelesaian Masalah)
-
-Banyak kendala umum yang terjadi saat menjalankan project di lokal. Ikuti panduan ini jika Anda mengalami masalah:
-
-- **Apache atau MySQL di XAMPP/Laragon Error (Tidak mau Start)**
-  Biasanya terjadi karena *Port* bentrok (Port 80/3306 sudah dipakai aplikasi lain, seperti Skype atau VMware). Matikan aplikasi yang bentrok, lalu restart XAMPP.
-- **Browser menampilkan `localhost tidak bisa dibuka`**
-  Pastikan Apache benar-benar berstatus hijau (*Running*). Jika sudah berjalan tapi tetap gagal, cek apakah Anda menaruh foldernya di lokasi yang salah (harus di dalam `htdocs` atau `www`).
-- **Peringatan Halaman 404 Not Found**
-  Pastikan nama folder saat Anda meng-clone Git adalah `webdesa`. Jika foldernya bernama `webdesa-main`, maka URL Anda harus menjadi `http://localhost/webdesa-main`.
-- **Gagal Meng-import Database**
-  Seringkali karena Anda lupa membuat database `webdesa` di phpMyAdmin terlebih dahulu. Buat databasenya dulu, klik nama databasenya, baru import.
-- **Login Gagal di `secure-v2` (Padahal password sudah benar `admin123`)**
-  Anda **LUPA** meng-import ulang `schema.sql` dan `dummy_data.sql` saat pindah ke branch `secure-v2`. Jika database masih berisi *plaintext*, maka fitur pengecekan *Bcrypt* akan error dan menganggap sandinya salah. Selalu ingat: *Ganti branch = Import ulang database!*
+| Fitur Keamanan | Branch `master` (Rentan) | Branch `secure-v2` (Aman) | Yang Diamati di Burp Suite |
+|:---|:---|:---|:---|
+| **SQL Injection** | Rentan — input digabung langsung ke SQL | Aman — *Prepared Statement* | Response: `302` (masuk) vs `200` (ditolak) |
+| **Password Storage** | Plaintext di database | Bcrypt Hash di database | Request sama; bukti di phpMyAdmin |
+| **Brute Force** | Tidak ada batasan login gagal | Blokir setelah 5 kali gagal | Response ke-6: pesan blokir muncul |
 
 ---
 
-# FAQ (Pertanyaan yang Sering Muncul)
+## Troubleshooting Burp Suite
 
-- **Mengapa harus repot-repot berpindah branch Git?**
-  Branch Git memudahkan Anda untuk berpindah 'dimensi ruang waktu' aplikasi tanpa harus meng-copy-paste dua folder yang berbeda (`webdesa-rentan` dan `webdesa-aman`). Ini melatih Anda menggunakan alur kerja standar industri perangkat lunak.
-- **Mengapa password saya di database berubah menjadi karakter acak seperti `$2y...`?**
-  Ini adalah ciri khas format algoritma *Bcrypt*. Karakter acak tersebut mustahil ditebak dan bahkan penciptanya sendiri tidak bisa membacanya kembali menjadi password asli Anda.
-- **Loh, kalau *Bcrypt* tidak bisa dibaca kembali, bagaimana cara aplikasi mencocokkan password login saya?**
-  PHP memiliki fungsi ajaib bernama `password_verify()`. Daripada mengubah hasil acakan kembali menjadi teks (yang tidak mungkin), sistem mengambil teks yang Anda ketik, mengacaknya dengan cara yang sama di balik layar, lalu **membandingkan hasilnya**. Jika hasil acakannya identik, Anda diizinkan masuk!
-- **Bagaimana jika saya sedang terburu-buru mempraktikkan Brute Force dan tidak ingin menunggu 15 menit saat Terblokir?**
-  Sebagai *SysAdmin*, Anda bebas dari aturan! Buka phpMyAdmin, buka tabel `login_attempts`, centang IP address Anda, lalu klik tombol *Delete (Hapus)*. Blokir Anda akan otomatis dicabut.
+Berikut adalah masalah yang sering terjadi saat menggunakan Burp Suite dan cara mengatasinya:
+
+### ❌ Browser tidak bisa membuka website setelah proxy aktif
+
+**Gejala:** Setelah mengatur proxy di browser, semua halaman menampilkan error *"The proxy server is refusing connections"* atau *"Unable to connect"*.
+
+**Penyebab:** Burp Suite belum berjalan, atau proxy listener-nya tidak aktif.
+
+**Solusi:**
+1. Pastikan Burp Suite **sudah dibuka** dan menampilkan tampilan utama (bukan masih loading).
+2. Buka tab **Proxy → Proxy settings** di Burp Suite.
+3. Periksa apakah listener `127.0.0.1:8080` berstatus **Running**.
+4. Jika tidak ada listener, klik **Add** → isi **Bind to port**: `8080`, **Bind to address**: `Loopback only` → klik **OK**.
+
+---
+
+### ❌ Browser menampilkan peringatan sertifikat / "Your connection is not private"
+
+**Gejala:** Browser menampilkan halaman peringatan merah bertuliskan *"Your connection is not private"* atau *"NET::ERR_CERT_AUTHORITY_INVALID"*.
+
+**Penyebab:** Sertifikat Burp Suite (CA Certificate) belum dipasang di browser.
+
+**Solusi:**
+Ikuti langkah 3.6 pada panduan di atas untuk mengunduh dan memasang sertifikat Burp Suite.
+
+---
+
+### ❌ Request tidak muncul di HTTP history
+
+**Gejala:** Anda sudah membuka halaman web, tetapi HTTP history di Burp Suite tetap kosong.
+
+**Penyebab 1:** Proxy browser belum diarahkan ke Burp Suite.
+
+**Solusi:** Periksa kembali pengaturan proxy browser Anda (langkah 3.5). Pastikan:
+- Address: `127.0.0.1`
+- Port: `8080`
+
+**Penyebab 2:** Anda menggunakan browser yang berbeda dari yang diatur proxy-nya.
+
+**Solusi:** Pastikan Anda membuka website menggunakan browser **yang sama** dengan yang sudah diatur proxy-nya.
+
+**Penyebab 3:** Website yang Anda akses menggunakan `localhost` dan browser melewatkan proxy untuk alamat lokal.
+
+**Solusi:**
+- Di **Windows proxy settings**, pastikan kotak *"Don't use the proxy server for local (intranet) addresses"* **tidak dicentang**.
+- Di **Firefox**, ketik `about:config` di address bar → cari `network.proxy.allow_hijacking_localhost` → ubah nilainya menjadi `true`.
+
+---
+
+### ❌ Halaman web "macet" / tidak pernah selesai loading
+
+**Gejala:** Setelah mengakses halaman web, browser terus loading tanpa henti (ikon berputar terus).
+
+**Penyebab:** **Intercept** di Burp Suite dalam keadaan **on** — artinya Burp Suite sedang menahan request Anda dan menunggu Anda menekan tombol **Forward**.
+
+**Solusi:**
+1. Buka Burp Suite → tab **Proxy → Intercept**.
+2. Jika tombol bertuliskan **"Intercept is on"**, klik tombol tersebut untuk mengubahnya menjadi **"Intercept is off"**.
+3. Semua request yang tertahan akan langsung dikirimkan, dan halaman web akan selesai loading.
+
+> 💡 **Tips:** Selama praktikum ini, selalu pastikan Intercept dalam keadaan **off** kecuali diperintahkan sebaliknya.
+
+---
+
+### ❌ Lupa mematikan proxy setelah praktikum
+
+**Gejala:** Setelah menutup Burp Suite, browser tidak bisa membuka website manapun (termasuk Google, YouTube, dll).
+
+**Penyebab:** Proxy browser masih diarahkan ke `127.0.0.1:8080`, tetapi Burp Suite sudah ditutup sehingga tidak ada yang melayani koneksi.
+
+**Solusi:**
+
+**Untuk Chrome/Edge (Windows):**
+1. Buka **Settings Windows** → **Network & Internet** → **Proxy**.
+2. Di bagian **Manual proxy setup**, matikan toggle / klik **Edit** → matikan → **Save**.
+
+**Untuk Firefox:**
+1. Buka **Settings** → scroll ke **Network Settings** → klik **Settings...**.
+2. Pilih **No proxy** atau **Use system proxy settings**.
+3. Klik **OK**.
+
+> ⚠️ **PENTING:** Biasakan **selalu mematikan proxy** setelah selesai praktikum! Jika lupa, internet Anda tidak akan berfungsi normal.
+
+---
+
+### ❌ Port 8080 sudah dipakai aplikasi lain
+
+**Gejala:** Burp Suite menampilkan error saat mencoba menjalankan proxy listener di port 8080.
+
+**Penyebab:** Aplikasi lain (misalnya Jenkins, Tomcat, atau XAMPP Tomcat) sudah menggunakan port 8080.
+
+**Solusi:**
+1. Di Burp Suite, buka **Proxy → Proxy settings**.
+2. Edit listener yang ada, atau tambahkan listener baru dengan port lain, misalnya `8888`.
+3. **Jangan lupa** mengubah pengaturan proxy browser Anda agar mengarah ke port yang baru (misalnya `127.0.0.1:8888`).
+
+---
+
+## Troubleshooting Umum
+
+Berikut masalah umum yang tidak berkaitan dengan Burp Suite:
+
+| Masalah | Penyebab | Solusi |
+|:---|:---|:---|
+| Apache/MySQL tidak mau Start | Port 80/3306 sudah dipakai aplikasi lain | Matikan aplikasi yang bentrok, lalu restart XAMPP |
+| `localhost` tidak bisa dibuka | Apache belum berjalan | Pastikan Apache berstatus hijau (Running) di XAMPP |
+| Halaman 404 Not Found | Nama folder salah | Pastikan folder bernama `webdesa` di dalam `htdocs` |
+| Gagal import database | Database belum dibuat | Buat database `webdesa` dulu di phpMyAdmin, baru import |
+| Login gagal di `secure-v2` padahal password benar | Lupa import ulang database | Setiap pindah branch → wajib import ulang `schema.sql` dan `dummy_data.sql` |
+
+---
+
+## FAQ
+
+**T: Mengapa harus repot-repot berpindah branch Git?**
+> Branch Git memudahkan Anda berpindah "dimensi" aplikasi tanpa harus menyalin dua folder berbeda. Ini juga melatih Anda menggunakan alur kerja standar industri.
+
+**T: Mengapa password di database berubah menjadi karakter acak `$2y...`?**
+> Ini adalah format *Bcrypt hash*. Karakter tersebut mustahil ditebak dan tidak bisa dikembalikan ke password asli.
+
+**T: Kalau Bcrypt tidak bisa dibaca kembali, bagaimana cara server mencocokkan password?**
+> PHP menggunakan fungsi `password_verify()`. Sistem mengambil teks yang Anda ketik, mengacaknya dengan cara yang sama, lalu **membandingkan hasilnya**. Jika cocok, Anda diizinkan masuk.
+
+**T: Bagaimana jika saat praktikum Brute Force, saya tidak ingin menunggu 15 menit?**
+> Buka phpMyAdmin → tabel `login_attempts` → centang semua baris → klik **Delete**. Blokir langsung dicabut.
+
+**T: Apakah Burp Suite Community Edition benar-benar gratis?**
+> Ya, sepenuhnya gratis. Versi Community sudah cukup untuk seluruh kebutuhan praktikum ini. Versi Professional (berbayar) memiliki fitur tambahan seperti scanner otomatis yang tidak diperlukan di sini.
+
+**T: Apakah aman menginstal sertifikat Burp Suite di komputer saya?**
+> Ya, aman untuk keperluan praktikum. Sertifikat ini hanya digunakan agar Burp Suite bisa membaca lalu lintas HTTPS lokal. Setelah praktikum selesai, Anda bisa menghapus sertifikat tersebut dari browser jika diinginkan.
+
+**T: Apa bedanya Intercept "on" dan "off" di Burp Suite?**
+> **Intercept on** = Burp Suite **menahan** setiap request dan menunggu Anda menekan tombol Forward secara manual. Cocok untuk memodifikasi request.
+> **Intercept off** = Burp Suite membiarkan semua request lewat secara otomatis dan hanya **mencatatnya** di HTTP history. Untuk praktikum ini, gunakan mode **off**.
