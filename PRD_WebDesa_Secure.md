@@ -1,45 +1,64 @@
-# Product Requirements Document (PRD)
-## Sistem Informasi Web Desa - SQL Injection Research Lab (Versi Aman)
+# Panduan Pengujian Keamanan Web Desa (Versi Aman - Branch `secure-v2`)
 
-### 1. Informasi Proyek
-- **Nama Proyek**: Web Desa - Secure Version (Branch `secure-v2`)
-- **Tujuan**: Menjadi referensi kode yang aman (secure code) sebagai hasil mitigasi dari kerentanan yang ada pada versi rentan (branch `master`).
-- **Target Pengguna**: Mahasiswa Keamanan Informasi (sebagai referensi perbaikan).
+Dokumen ini berisi panduan *step-by-step* untuk mempraktekkan pengujian pada 3 mitigasi keamanan utama yang telah diterapkan di versi ini. Anda dapat mengujinya untuk membuktikan bahwa celah pada versi rentan telah berhasil ditutup.
 
-### 2. Fokus Perbaikan Keamanan (3 Mitigasi Utama)
-Aplikasi ini telah diperbaiki secara khusus pada 3 aspek keamanan berikut:
+---
 
-#### A. SQL Injection Prevention
-- **Mitigasi**: Mengganti semua eksekusi query SQL yang menggunakan penggabungan string (concatenation) dengan metode **Prepared Statement**.
-- **Implementasi**:
-  - Dibuat fungsi helper `db_query()` di `config/security.php` yang membungkus fungsi `mysqli_prepare` dan `mysqli_stmt_bind_param`.
-  - Halaman `admin/login.php`, `cek_warga.php`, dan `berita_detail.php` kini memisahkan secara ketat antara logika SQL dan data input pengguna.
+## Persiapan Awal
+1. Pastikan Anda berada di branch `secure-v2`: `git checkout secure-v2`
+2. Buka `phpMyAdmin` (atau tool database lain).
+3. Buat database `webdesa` (timpa yang sebelumnya jika ada).
+4. Import file `database/schema.sql` dan `database/dummy_data.sql` ke dalam database `webdesa`. **Penting**: Struktur tabel versi aman ini berbeda (mengandung tabel `login_attempts` dan ukuran kolom `password` 255 karakter).
+5. Buka browser dan akses `http://localhost/webdesa/admin/login.php`.
 
-#### B. Password Security (Bcrypt Hash)
-- **Mitigasi**: Menggunakan fungsi enkripsi searah (hash) yang dirancang khusus untuk password dengan algoritma **Bcrypt**, menggantikan penyimpanan plaintext.
-- **Implementasi**:
-  - Tipe data kolom `password` pada tabel `users` diubah menjadi `VARCHAR(255)`.
-  - Registrasi dan perubahan password (fitur di `admin/users.php`) menggunakan fungsi `password_hash($password, PASSWORD_BCRYPT)`.
-  - Otentikasi pada `admin/login.php` menggunakan fungsi `password_verify()`.
+---
 
-#### C. Brute Force Protection (Rate Limiting)
-- **Mitigasi**: Menerapkan mekanisme *Rate Limiting* untuk mencegah serangan tebakan password secara masif dan otomatis.
-- **Implementasi**:
-  - Dibuat tabel `login_attempts` untuk mencatat log IP Address setiap kali terjadi kegagalan login.
-  - Pada `admin/login.php`, jika IP gagal login sebanyak 5 kali berturut-turut, sistem akan memblokir akses login dari IP tersebut selama 15 menit.
-  - Log aktivitas percobaan brute force (beserta status blokir) ditampilkan pada halaman Dashboard Admin secara langsung (real-time).
+## 🛡️ Skenario 1: Pengujian SQL Injection Prevention (Prepared Statement)
+Pada versi ini, seluruh query telah diamankan menggunakan metode *Prepared Statement* sehingga input pengguna diperlakukan secara ketat sebagai data (string), bukan sebagai eksekusi kode SQL.
 
-### 3. Fungsionalitas Utama (Sistem Informasi)
-1. **Beranda Publik**: Menampilkan statistik desa, berita, dan sambutan.
-2. **Pengecekan NIK**: Pencarian aman berbasis Prepared Statement.
-3. **Detail Berita**: Menampilkan isi berita berdasarkan ID.
-4. **Panel Admin**:
-   - Login admin (Terlindungi dari SQLi & Brute Force).
-   - Dashboard dengan tabel peringatan Keamanan.
-   - Manajemen Pengguna (CRUD Admin & Ganti Password) untuk demonstrasi Bcrypt.
-   - CRUD Data Warga, Berita, dan Pengajuan Surat.
+### Langkah Pengujian:
+1. Akses halaman login admin: `http://localhost/webdesa/admin/login.php`
+2. Pada kolom **Username**, masukkan payload yang sebelumnya berhasil:
+   ```text
+   admin' OR '1'='1
+   ```
+3. Pada kolom **Password**, masukkan:
+   ```text
+   bebas123
+   ```
+4. Klik tombol **Login**.
+5. **Hasil yang Diharapkan:** Login **GAGAL** dengan pesan error *"Username atau password salah"*. Sistem membaca username secara literal sebagai teks `admin' OR '1'='1`, bukan sebagai bagian dari instruksi SQL, sehingga data tidak ditemukan di database.
 
-### 4. Lingkungan dan Setup
-- **Teknologi**: PHP Native (7.4/8.x), MySQL/MariaDB.
-- **Desain UI**: Menggunakan Bootstrap 5 dengan tema Biru Pemerintah untuk tampilan modern dan profesional.
-- **Database**: Skema versi aman (`login_attempts` & password bcrypt) tersedia di `database/schema.sql` dan `database/dummy_data.sql`.
+---
+
+## 🛡️ Skenario 2: Pengujian Password Security (Bcrypt Hash)
+Pada versi ini, database tidak lagi menyimpan *plaintext*. Password di-hash menggunakan fungsi `password_hash()` bawaan PHP yang mengadopsi algoritma Bcrypt (termasuk *salt* otomatis).
+
+### Langkah Pengujian:
+1. Buka `phpMyAdmin` dan lihat tabel `users`.
+2. Perhatikan kolom `password`. Isinya kini berbentuk string acak sepanjang sekitar 60 karakter, contoh:
+   `$2y$12$c73y1dfyUZvvaDof9x66.aVarJfw.WL6ymowXbazOKTxaRVPxhWu`
+3. Hal ini membuktikan bahwa jika terjadi kebocoran database, password pengguna tetap aman dan sangat sulit di-*crack*.
+4. **Demonstrasi Manajemen Pengguna:**
+   - Login dengan akun `admin` (password: `admin123`).
+   - Masuk ke menu **Manajemen Pengguna** di sidebar kiri.
+   - Klik **Tambah Pengguna** dan buat admin baru.
+   - Lihat pada tabel yang disajikan, password yang baru dibuat otomatis tersimpan dalam bentuk Bcrypt hash.
+   - Anda juga dapat menggunakan fitur **Ganti Password** untuk melihat fungsi hash bekerja memperbarui password lama.
+
+---
+
+## 🛡️ Skenario 3: Pengujian Brute Force Protection (Rate Limiting)
+Sistem sekarang mencatat *IP Address* dan membatasi percobaan login yang salah.
+
+### Langkah Pengujian:
+1. Buka halaman login admin (pastikan Anda sudah *logout* jika sebelumnya masuk).
+2. Masukkan username `admin` dan password salah (misal: `salah1`). Klik Login.
+3. Anda akan melihat peringatan *"Username atau password salah"*.
+4. **Ulangi terus menerus sebanyak 5 kali** dengan password yang salah.
+5. Pada percobaan ke-6, **Hasil yang Diharapkan:** Sistem akan memblokir Anda dan menampilkan pesan error merah:
+   *"Terlalu banyak percobaan login. Coba lagi dalam 15 menit."*
+6. **Melihat Log Keamanan:**
+   - Login sukses menggunakan akun/browser/perangkat lain (atau hapus record di phpMyAdmin tabel `login_attempts` untuk membuka blokir sementara agar Anda bisa masuk).
+   - Setelah masuk ke Dashboard Admin, *scroll* ke bagian bawah.
+   - Anda akan melihat **Log Aktivitas Keamanan (Brute Force Attempts)** yang mencatat IP Address penyerang, jumlah kegagalan, dan status *Terblokir 15 Menit*.
