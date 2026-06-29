@@ -1,5 +1,5 @@
-CREATE DATABASE IF NOT EXISTS webdesa;
-USE webdesa;
+CREATE DATABASE IF NOT EXISTS webdesa_secure;
+USE webdesa_secure;
 
 CREATE TABLE users (
   id           INT AUTO_INCREMENT PRIMARY KEY,

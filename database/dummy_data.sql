@@ -1,4 +1,4 @@
-USE webdesa;
+USE webdesa_secure;
 
 INSERT INTO users (username, password, nama_lengkap, role) VALUES
 ('admin',    '$2y$10$2LG1U2M/l424bGlGeTD1WeSa1a6OrXOID8Z0c1xgi/wX2JEoL/hMW', 'Administrator', 'admin'),
