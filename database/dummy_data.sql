@@ -1,8 +1,8 @@
 USE webdesa;
 
 INSERT INTO users (username, password, nama_lengkap, role) VALUES
-('admin',    '$2y$12$c73y1dfyUZvvaDof9x66.aVarJfw.WL6ymowXbazOKTxaRVPxhWu', 'Administrator', 'admin'),
-('petugas1', '$2y$12$zzuWmdj4KKxL.cMiskaeQOan15obF7J8unQJCU/1nwftkb/giy2L6', 'Ahmad Petugas', 'petugas');
+('admin',    '$2y$10$2LG1U2M/l424bGlGeTD1WeSa1a6OrXOID8Z0c1xgi/wX2JEoL/hMW', 'Administrator', 'admin'),
+('petugas1', '$2y$10$ueFR1zcar4xAMyVaENwhY.83kU0MdmuAV3RNyimWRBoM7OIEhQk4e', 'Ahmad Petugas', 'petugas');
 
 INSERT INTO warga (nik, nama, tempat_lahir, tanggal_lahir, jenis_kelamin, alamat, rt, rw, dusun, pekerjaan, status_perkawinan) VALUES
 ('3273010101000001', 'Ahmad Hidayat', 'Bogor', '1985-01-15', 'L', 'Jl. Raya Sukamaju No. 1', '001', '001', 'Sukamaju', 'PNS', 'Kawin'),
