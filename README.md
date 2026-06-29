@@ -1,52 +1,74 @@
-# Web Desa Secure — v2.0.0-secure
+# Web Desa - Laboratorium Keamanan Web
 
-Versi aman dari Sistem Informasi Desa untuk demonstrasi pengujian keamanan.
+Project ini merupakan **Sistem Informasi Web Desa** yang dikembangkan khusus sebagai media pembelajaran keamanan web. Aplikasi ini sengaja dibuat dengan beberapa kerentanan keamanan agar mahasiswa dapat mempraktekkan eksploitasi dan mitigasi kerentanan secara langsung.
 
-## Instalasi
-1. Copy folder webdesa ke htdocs/ (XAMPP)
-2. Buat database: `CREATE DATABASE webdesa_secure;`
-3. Import schema: `mysql -u root webdesa_secure < database/schema.sql`
-4. Import data: `mysql -u root webdesa_secure < database/dummy_data.sql`
-5. Akses: `http://localhost/webdesa/`
+Project ini memiliki dua branch utama:
+- `master` : Versi **rentan** (vulnerable) yang belum mengimplementasikan proteksi.
+- `secure-v2` : Versi **aman** (secure) yang sudah memperbaiki kerentanan tersebut.
 
-## Akun Default
-| Role    | Username | Password   |
-|---------|----------|------------|
-| Admin   | admin    | admin123   |
-| Petugas | petugas1 | petugas123 |
+## 🚀 Fokus 3 Percobaan Keamanan
 
-(password disimpan sebagai bcrypt hash di database)
+Aplikasi ini difokuskan pada 3 jenis serangan dan mitigasi keamanan utama:
 
-## Perlindungan yang Diimplementasikan
+### 1. SQL Injection (SQLi)
+- **Apa itu**: SQL Injection adalah teknik injeksi kode (code injection) yang memanfaatkan celah keamanan pada lapisan database aplikasi. Penyerang dapat memasukkan query SQL berbahaya melalui input pengguna.
+- **Mengapa berbahaya**: Penyerang dapat membobol sistem login (bypass authentication), mencuri seluruh data warga, menghapus database, hingga mengambil alih server.
+- **Cara mencegah**: Cara paling efektif adalah menggunakan **Prepared Statement** (atau Parameterized Queries) di mana struktur query dan data input dipisahkan secara ketat sehingga input pengguna tidak akan pernah dieksekusi sebagai perintah SQL.
+- **Implementasi pada project**: Pada branch `secure-v2`, seluruh query di fitur Login, Pencarian Warga, dan Detail Berita telah diubah menggunakan `Prepared Statement` pada ekstensi `mysqli`.
 
-| Kerentanan | Perlindungan |
-|---|---|
-| SQL Injection | Prepared Statements (semua query) |
-| Password plaintext | bcrypt hash cost factor 12 |
-| Brute Force | Rate limiting 5x/15 menit per IP |
-| XSS | htmlspecialchars() semua output |
-| CSRF | Token per sesi di semua form POST |
-| Info Disclosure | Pesan error generik |
-| Clickjacking | X-Frame-Options: DENY |
+### 2. Password Security (Kriptografi Hash)
+- **Apa itu bcrypt**: *Bcrypt* adalah fungsi hash password yang dirancang khusus agar lambat dikomputasi (*key stretching*) dan secara otomatis menggunakan *salt* acak untuk setiap password, membuatnya sangat tahan terhadap serangan *Brute Force* dan *Rainbow Table*.
+- **Mengapa password tidak boleh plaintext**: Jika database bocor, password *plaintext* (teks biasa) akan langsung diketahui oleh peretas dan berisiko digunakan untuk mengambil alih akun pengguna di platform lain.
+- **Bagaimana project menerapkannya**: Pada versi rentan, password admin disimpan dalam bentuk teks biasa. Pada versi `secure-v2`, fungsi bawaan PHP `password_hash($password, PASSWORD_BCRYPT)` digunakan saat registrasi/tambah admin, dan `password_verify()` digunakan saat login.
 
-## Perbedaan dengan Versi Non-Secure
+### 3. Brute Force Protection (Rate Limiting)
+- **Apa itu Brute Force**: Serangan *Brute Force* adalah upaya menebak username dan password secara berulang kali secara otomatis dan masif hingga menemukan kombinasi yang tepat.
+- **Bagaimana Rate Limiting bekerja**: *Rate limiting* membatasi jumlah percobaan (request) dalam jendela waktu tertentu dari sebuah IP.
+- **Bagaimana implementasinya pada project**: Sistem menyimpan riwayat IP dan waktu login yang gagal ke tabel `login_attempts`. Jika IP yang sama gagal login lebih dari 5 kali, maka IP tersebut akan diblokir selama 15 menit. Log percobaan ini juga dapat dipantau di Dashboard Admin.
 
-| Aspek | Non-Secure (master) | Secure (secure-v2) |
-|---|---|---|
-| Query DB | String concatenation raw | Prepared statement mysqli |
-| Password | Plaintext di DB | bcrypt hash |
-| Error | `mysqli_error($conn)` ditampilkan | Pesan generik |
-| Output | `echo $row['x']` | `echo e($row['x'])` = htmlspecialchars |
-| CSRF | Tidak ada | Token per sesi |
-| Rate Limit | Tidak ada | 5x / 15 menit |
-| Session | `session_start()` biasa | httponly + samesite strict + regenerate |
+---
 
-## Switch Branch
+## 🛠 Instalasi dan Persiapan
 
-```bash
-# Versi non-secure (SQLi Lab)
-git checkout master
+1. **Persyaratan Sistem**:
+   - PHP (Versi 7.4 atau 8.x)
+   - MySQL / MariaDB
+   - Web Server (Apache/Nginx) atau XAMPP/Laragon
 
-# Versi secure (hardened)
-git checkout secure-v2
-```
+2. **Langkah Instalasi**:
+   - Clone repository ini ke direktori web server Anda (`htdocs` atau `/var/www/html/`).
+     ```bash
+     git clone https://github.com/fannndi/webdesa.git
+     ```
+   - Buat database baru di MySQL dengan nama `webdesa`.
+   - Import file `database/schema.sql` dilanjutkan dengan `database/dummy_data.sql` ke dalam database `webdesa`.
+   - Akses melalui browser: `http://localhost/webdesa`.
+
+## 🗄 Database
+
+- **Tabel `users`**: Menyimpan data admin/petugas.
+- **Tabel `warga`**: Menyimpan data penduduk.
+- **Tabel `berita`**: Menyimpan publikasi desa.
+- **Tabel `surat_pengajuan`**: Menyimpan data layanan persuratan.
+- **Tabel `login_attempts`**: (Khusus secure-v2) Menyimpan catatan login gagal.
+
+## 🔐 Akun Default
+
+Gunakan akun berikut untuk masuk ke panel admin (`/admin/login.php`):
+
+| Username | Password | Role |
+|----------|----------|------|
+| `admin`  | `admin123` | Admin |
+| `petugas1` | `petugas123` | Petugas |
+
+## 📁 Struktur Folder
+
+- `/admin` - Halaman khusus panel admin (Login, Dashboard, Manajemen Data)
+- `/assets` - File CSS, JS, dan Gambar (termasuk kustomisasi tema Biru Pemerintah)
+- `/config` - Konfigurasi database dan konstanta aplikasi
+- `/database` - File SQL untuk setup struktur dan data awal
+- `/includes` - File parsial penyusun UI (Header, Footer)
+- `index.php` - Halaman utama (Publik)
+
+---
+*Dikembangkan sebagai sarana edukasi keamanan informasi.*

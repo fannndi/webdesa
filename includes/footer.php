@@ -3,10 +3,10 @@
         <div class="container">
             <div class="row">
                 <div class="col-md-4">
-                    <h5><?= defined('DESA_NAMA') ? e(DESA_NAMA) : 'Desa' ?></h5>
-                    <p><?= defined('DESA_KECAMATAN') ? e(DESA_KECAMATAN) : '' ?><br>
-                       <?= defined('DESA_KABUPATEN') ? e(DESA_KABUPATEN) : '' ?><br>
-                       <?= defined('DESA_PROVINSI') ? e(DESA_PROVINSI) : '' ?></p>
+                    <h5><?= defined('DESA_NAMA') ? DESA_NAMA : 'Desa' ?></h5>
+                    <p><?= defined('DESA_KECAMATAN') ? DESA_KECAMATAN : '' ?><br>
+                       <?= defined('DESA_KABUPATEN') ? DESA_KABUPATEN : '' ?><br>
+                       <?= defined('DESA_PROVINSI') ? DESA_PROVINSI : '' ?></p>
                 </div>
                 <div class="col-md-4">
                     <h5>Navigasi Cepat</h5>
@@ -26,7 +26,7 @@
             </div>
             <hr>
             <div class="text-center">
-                <p class="mb-0">&copy; 2026 <?= defined('DESA_NAMA') ? e(DESA_NAMA) : 'Desa' ?>. All rights reserved.</p>
+                <p class="mb-0">&copy; 2026 <?= defined('DESA_NAMA') ? DESA_NAMA : 'Desa' ?>. All rights reserved.</p>
             </div>
         </div>
     </footer>
