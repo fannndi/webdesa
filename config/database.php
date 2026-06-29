@@ -1,5 +1,5 @@
 <?php
-$conn = mysqli_connect('localhost', 'root', '', 'webdesa');
+$conn = mysqli_connect('localhost', 'root', '', 'webdesa_secure');
 if (!$conn) {
     die("Koneksi gagal: " . mysqli_connect_error());
 }
